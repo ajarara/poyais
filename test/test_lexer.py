@@ -8,7 +8,7 @@ def test_empty_exp():
 
 def test_lambda_exp():
     lambda_exp = "(lambda () nil)"
-    assert list(lex(lambda_exp)) == ["(", "lambda", "(", ")", "nil", + ")"]
+    assert list(lex(lambda_exp)) == ["(", "lambda", "(", ")", "nil", ")"]
 
 
 def test_quoted_list():

@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='Poyais',
     version='0.0.1',
-    description=('Dynamite, with a laser beam.')
+    description=('Dynamite, with a laser beam.'),
     url='https://github.com/alphor/python-poyais',
     author='Ahmad Jarara',
     author_email='ajarara94@gmail.com',
