@@ -14,9 +14,7 @@ import re
 # and tag it.
 
 # the only strangeness I see is in multiline strings
-3# I could just not support them :|
-# but otherwise this is a 
-
+# I'll support them when Java does >:)
 
 
 def lex(program_string,
