@@ -35,7 +35,7 @@ TYPES = (
     buildPairing("^'$", 'single_quote'),
     buildPairing("^`$", 'backtick'),
     buildPairing('^"[^"]*"$', 'string'),  # does this match the empty string?
-    buildPairing(r"^[0-9]+$", 'number'),
+    buildPairing(r"^[0-9]+$", 'number'),  # id numbers before symbols
     buildPairing(r"[a-zA-z\-0-9]+", 'lisp_symbol'),
 )
 
@@ -50,6 +50,5 @@ def parse(lexical_stream):
 def parse_token(lexical_token):
     for pairing in TYPES:
         if pairing.reg.match(lexical_token):
-            yield TokenSymbolPairing(lexical_token,
-                                     pairing.symbol_type)
-            continue
+            return TokenSymbolPairing(lexical_token,
+                                      pairing.symbol_type)
