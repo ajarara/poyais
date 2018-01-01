@@ -44,7 +44,8 @@ TokenSymbolPairing = namedtuple('TokenSymbolPairing', ['token', 'symbol_type'])
 
 def parse(lexical_stream):
     for lexical_token in lexical_stream:
-        parse_token(lexical_token)
+        yield parse_token(lexical_token)
+
 
 def parse_token(lexical_token):
     for pairing in TYPES:
