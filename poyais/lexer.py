@@ -16,12 +16,11 @@ import re
 # the only strangeness I see is in multiline strings
 # I'll support them when Java does >:)
 
-
 def lex(program_string,
         string_delim="'",
         token_chars={'`', '(', ')', "'"},
         whitespace={'\t', ' '},
-        symbol_reg=re.compile(r"[a-zA-Z\-][a-zA-Z\-0-9]*")):
+        symbol_reg=re.compile(r"[a-zA-Z\-0-9]+")):
     pos = 0
     buf = []
     state_string = False
