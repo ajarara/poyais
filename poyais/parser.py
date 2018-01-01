@@ -29,6 +29,10 @@ def buildPairing(reg, symbol_type):
 # that I can't reliably test individual elements
 # except by going by their indices. That is, if I wanted to test what
 # is parsed into an open_paren, I'd have to index into this tuple.
+# I could pull them out into their own symbols
+# or turn this types thing into a dictionary and build the pairing
+# at iteration time
+# that... seems reasonable actually
 TYPES = (
     buildPairing(r'^\($', 'open_paren'),
     buildPairing(r'^\)$', 'close_paren'),
