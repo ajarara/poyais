@@ -18,6 +18,7 @@ def test_quoted_list():
     quasi_quoted_exp = "`()"
     assert list(lex(quasi_quoted_exp)) == ["`", "(", ")"]
 
+
 def test_string():
     string_exp = '"Here\'s a semi hairy example"'
     assert list(lex(string_exp)) == [
@@ -29,4 +30,6 @@ def test_string():
         "(", "lambda", "(", ")", "'", "(", string_exp, ")", ")"]
 
 
-# just a comment to test if I can git push
+def test_single_digits():
+    digits_exp = "(define () 5)"
+    assert list(lex(digits_exp)) == ["(", "define", "(", ")", "5", ")"]
