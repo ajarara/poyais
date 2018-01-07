@@ -1,3 +1,4 @@
+from functools import reduce
 import re
 
 
@@ -23,37 +24,41 @@ def get_format_dependencies(string, delim=DEPENDENT):
 
 def make_parser_from_reg(regex_string):
     # build the regex, then return a function that takes a string,
-    # applies it to the string, and returns the section of it that it
-    # consumes.
-    # to the regex looking for a match
-
+    # applies it to the string, and returns the consumed string
     reg = re.compile(regex_string)
 
     def parser(string):
-        return reg.match(string)
-
+        maybe_match = reg.match(string)
+        if maybe_match:
+            return maybe_match.group()
     return parser
 
 
 def and_parsers(parser1, parser2):
     def parser(string):
         maybe_match1 = parser1(string)
-        if maybe_match1:
-            # advance beyond the match
-            maybe_match2 = parser2(string[maybe_match1.end():])
+        if maybe_match1 is not None:
+            maybe_match2 = parser2(string[len(maybe_match1):])
             if maybe_match2 is not None:
-                return maybe_match1.group() + maybe_match2.group()
-
+                return maybe_match1 + maybe_match2
     return parser
 
 
 def or_parsers(parser1, parser2):
     def parser(string):
-        maybe1 = parser1(string)
-        if maybe1:
-            return maybe1.group()
-        maybe2 = parser2(string)
-        if maybe2:
-            return maybe2.group()
-
+        maybe_match1 = parser1(string)
+        if maybe_match1 is not None:
+            return maybe_match1
+        maybe_match2 = parser2(string)
+        if maybe_match2 is not None:
+            return maybe_match2
     return parser
+
+
+def and_parsers_variadic(*parsers):
+    # what do we do on the empty list of parsers?
+    return reduce(and_parsers, parsers)
+
+
+def or_parsers_variadic(*parsers):
+    return reduce(or_parsers, parsers)

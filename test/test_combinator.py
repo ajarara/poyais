@@ -7,7 +7,7 @@ import string
 @given(text(alphabet=string.ascii_letters))
 def test_make_parser_returns_fun(literal_reg):
     func = make_parser_from_reg(literal_reg)
-    assert func(literal_reg)
+    assert func(literal_reg) == literal_reg
 
 
 @given(text(alphabet=string.ascii_letters),
