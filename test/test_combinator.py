@@ -41,7 +41,7 @@ def test_or_parsers_acts_as_either(reg1, reg2):
     assert reg2.startswith(tm2[0].match)
 
 
-def test_and_or_comb():
+def test_or_and_and_comb():
     # at this point I'm thinking it's probably a good idea
     # to write an anonymous parser. that'll make testing these
     # slightly less frictionless but more importantly
@@ -55,12 +55,27 @@ def test_and_or_comb():
     applepie = and_parsers(p2, p3)
     anypie = or_parsers(honeypie, applepie)
 
-
     assert concat_tm_matches(honeypie('honeypie')) == 'honeypie'
     assert concat_tm_matches(applepie('applepie')) == 'applepie'
 
     assert concat_tm_matches(anypie('honeypie')) == 'honeypie'
     assert concat_tm_matches(anypie('applepie')) == 'applepie'
+
+
+def test_and_or_or_comb():
+    p1 = make_tagged_matcher('base', 'peach')
+    p2 = make_tagged_matcher('avant_garde', 'broccoli')
+    p3 = make_tagged_matcher('dessert', 'cobbler')
+    p4 = make_tagged_matcher('plural', 'es')
+
+    peach_or_broc = or_parsers(p1, p2)
+    dessert_or_plural = or_parsers(p3, p4)
+
+    yums = and_parsers(peach_or_broc, dessert_or_plural)
+
+    for yummy in ('peachcobbler', 'broccolicobbler',
+                  'peaches', 'broccolies'):
+        assert concat_tm_matches(yums(yummy)) == yummy
 
 
 def concat_tm_matches(tms):
