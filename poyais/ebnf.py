@@ -6,21 +6,7 @@ from collections import namedtuple
 Rule = namedtuple('Rule', ('lhs', 'rhs'))
 
 
-def split_into_rules(ebnf_string):
-    return dispatch_charwise(_split_assignments, ebnf_string)
-
-
-def dispatch_charwise(dispatch, ebnf_string):
-    # assigned is set when we've encountered an equal sign, but not a
-    # terminator (semicolon). this lets us keep track of which side to
-    # send characters to, and to expect an unquoted semicolon or an
-    # unquoted equals
-    state = {
-        'assigned': False,
-        'quoted': False,
-        'lhs': [],
-        'rhs': [],
-    }
+def dispatch_charwise(dispatch, ebnf_string, state):
     linum, idx = 0, 0
     for line in ebnf_string.split("\n"):
         # we increment before so that we correctly handle end of file easily
@@ -31,10 +17,20 @@ def dispatch_charwise(dispatch, ebnf_string):
             idx += 1
         idx = 0
         linum += 1
-    # problem here is that we silently ignore half written correct
-    # rules at the end like:
-    #   foo = 'a'
-    # (missing semicolon)
+
+
+def split_into_rules(ebnf_string):
+    # assigned is set when we've encountered an equal sign, but not a
+    # terminator (semicolon). this lets us keep track of which side to
+    # send characters to, and to expect an unquoted semicolon or an
+    # unquoted equals
+    state = {
+        'assigned': False,
+        'quoted': False,
+        'lhs': [],
+        'rhs': [],
+    }
+    return dispatch_charwise(_split_assignments, ebnf_string, state)
 
 
 # it's a little strange to mutate our inputs and also output rules.
@@ -66,10 +62,28 @@ def _split_assignments(line, linum, idx, state):
         state['lhs'].append(deref)
 
 
+# our types are
+#   terminal (associated with contents)
+#   identifier (associated with contents)
+#   EBNFSymbol (associated with kind)
+# this could be improved on.
+
+EBNFToken = namedtuple('EBNFToken', ['type', 'contents'])
+
+
+def parse_rhs(rhs):
+    state = {
+        'quoted': False,
+        'escaped': False
+    }
+    for char in rhs:
+        state['quoted'] = not state['quoted']
+
+
 def errmsg(why, linum, idx):
     return {
         'lhs_quote':           "Quote character on left hand side at",
         'lhs_semicolon':       "Semicolon on left hand side at",
         'rhs_unquoted_equals': "Unquoted '=' on right hand side at",
-        'unmatched_text':      "Unmatched text beyond"
     }[why] + " {}: {}".format(linum, idx)
+
