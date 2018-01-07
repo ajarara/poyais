@@ -1,4 +1,3 @@
-from functools import reduce
 import re
 
 
@@ -34,13 +33,18 @@ def make_parser_from_reg(regex_string):
     return parser
 
 
-def and_parsers(parser1, parser2):
+def and_parsers(*parsers):
     def parser(string):
-        maybe_match1 = parser1(string)
-        if maybe_match1 is not None:
-            maybe_match2 = parser2(string[len(maybe_match1):])
-            if maybe_match2 is not None:
-                return maybe_match1 + maybe_match2
+        out = []
+        idx = 0
+        for p in parsers:
+            maybe = p(string[idx:])
+            if maybe is not None:
+                out.append(maybe)
+                idx += len(maybe)
+            else:
+                return None
+        return ''.join(out)
     return parser
 
 
@@ -53,12 +57,3 @@ def or_parsers(parser1, parser2):
         if maybe_match2 is not None:
             return maybe_match2
     return parser
-
-
-def and_parsers_variadic(*parsers):
-    # what do we do on the empty list of parsers?
-    return reduce(and_parsers, parsers)
-
-
-def or_parsers_variadic(*parsers):
-    return reduce(or_parsers, parsers)
