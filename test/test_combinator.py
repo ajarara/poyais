@@ -7,7 +7,7 @@ import string
 @given(text(alphabet=string.ascii_letters))
 def test_make_parser_returns_fun(literal_reg):
     func = make_tagged_matcher('foo', literal_reg)
-    
+
     tm = func(literal_reg)
     assert len(tm) == 1
     assert tm[0].match == literal_reg
