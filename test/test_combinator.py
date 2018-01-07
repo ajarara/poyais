@@ -39,3 +39,29 @@ def test_or_parsers_acts_as_either(reg1, reg2):
     tm2 = func(reg2)
     assert len(tm2) == 1
     assert reg2.startswith(tm2[0].match)
+
+
+def test_and_or_comb():
+    # at this point I'm thinking it's probably a good idea
+    # to write an anonymous parser. that'll make testing these
+    # slightly less frictionless but more importantly
+    # I could see their use in compound statements with arbitrary
+    # syntax that we don't care about at the AST level
+    p1 = make_tagged_matcher('flavor1', 'honey')
+    p2 = make_tagged_matcher('flavor2', 'apple')
+    p3 = make_tagged_matcher('end',     'pie')
+
+    honeypie = and_parsers(p1, p3)
+    applepie = and_parsers(p2, p3)
+    anypie = or_parsers(honeypie, applepie)
+
+
+    assert concat_tm_matches(honeypie('honeypie')) == 'honeypie'
+    assert concat_tm_matches(applepie('applepie')) == 'applepie'
+
+    assert concat_tm_matches(anypie('honeypie')) == 'honeypie'
+    assert concat_tm_matches(anypie('applepie')) == 'applepie'
+
+
+def concat_tm_matches(tms):
+    return ''.join(x.match for x in tms)
