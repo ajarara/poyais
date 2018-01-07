@@ -1,5 +1,14 @@
+from collections import namedtuple
 import re
 
+
+# the fundamental parser unit is constructed from a tag
+# and a regex identifying the tag.
+
+# it is just a function that takes a string and returns
+# a generator that yields a number of tagged matches:
+
+Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 
 # from string import Formatter isn't particularly useful
 # or at least not immediately useful.
@@ -13,23 +22,18 @@ def get_format_dependencies(string, delim=DEPENDENT):
         yield match.groups()
 
 
-# first we need to represent a parser:
-# this should be transparent to end users (ie me)
-# all parsers operate on a stream,
-# if they cannot 'advance' the stream then they don't return
-# if they can, they return the string they matched.
-# ideally this should be enough to compose them easily.
-
-
-def make_parser_from_reg(regex_string):
+# we can break down any expression into its dependencies
+# and literal matches (like parens, backticks, etc)
+def make_tagged_matcher(tag, regex_string):
     # build the regex, then return a function that takes a string,
-    # applies it to the string, and returns the consumed string
+    # applies the reg to the string, if it succeeds
+    # return a tagged match with the tag and the string that matched.
     reg = re.compile(regex_string)
 
     def parser(string):
-        maybe_match = reg.match(string)
-        if maybe_match:
-            return maybe_match.group()
+        match = reg.match(string)
+        if match:
+            return (Tagged_Match(tag, match.group()),)
     return parser
 
 
@@ -39,12 +43,15 @@ def and_parsers(*parsers):
         idx = 0
         for p in parsers:
             maybe = p(string[idx:])
-            if maybe is not None:
-                out.append(maybe)
-                idx += len(maybe)
+            if maybe:
+                for tagged_match in maybe:
+                    out.append(tagged_match)
+                    idx += len(tagged_match.match)
             else:
-                return None
-        return ''.join(out)
+                # one of the parsers failed. Stop parsing,
+                # fail the whole parser.
+                return ()
+        return tuple(out)
     return parser
 
 
@@ -53,7 +60,5 @@ def or_parsers(*parsers):
         for p in parsers:
             maybe = p(string)
             if maybe is not None:
-                return maybe
-
+                return (maybe,)
     return parser
-
