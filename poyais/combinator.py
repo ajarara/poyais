@@ -15,6 +15,8 @@ Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 DEPENDENT = re.compile('{(\S+)}')
 
 
+# given a string like this:
+# "((?:{sexp})"
 # this provides a native syntax to declare what non terminals depend on
 # changing dependent will break existing regs, which is a problem.
 def get_format_dependencies(string, delim=DEPENDENT):
@@ -59,6 +61,8 @@ def or_parsers(*parsers):
     def parser(string):
         for p in parsers:
             maybe = p(string)
-            if maybe is not None:
-                return (maybe,)
+            if maybe:
+                return maybe
+        else:
+            return ()
     return parser
