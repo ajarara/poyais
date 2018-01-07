@@ -48,12 +48,12 @@ def and_parsers(*parsers):
     return parser
 
 
-def or_parsers(parser1, parser2):
+def or_parsers(*parsers):
     def parser(string):
-        maybe_match1 = parser1(string)
-        if maybe_match1 is not None:
-            return maybe_match1
-        maybe_match2 = parser2(string)
-        if maybe_match2 is not None:
-            return maybe_match2
+        for p in parsers:
+            maybe = p(string)
+            if maybe is not None:
+                return maybe
+
     return parser
+
