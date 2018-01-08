@@ -70,14 +70,38 @@ def _split_assignments(line, linum, idx, state):
 
 EBNFToken = namedtuple('EBNFToken', ['type', 'contents'])
 
+EBNFSYMBOL = set('{[(|,)]}')
+QUOTES = {"'", '"'}
 
-def parse_rhs(rhs):
-    state = {
-        'quoted': False,
-        'escaped': False
-    }
+
+def parse_rule(rule, symbols=EBNFSYMBOL, quotes=QUOTES):
+    rhs = rule.rhs
+    quoted = False
+    got = []
     for char in rhs:
-        state['quoted'] = not state['quoted']
+        if quoted:
+            got.append(char)
+            if char == quoted:
+                quoted = False
+                # verbatim, don't strip
+                yield EBNFToken('terminal', ''.join(got))
+                got = []
+        elif char in quotes:
+            quoted = char
+            if got:
+                yield EBNFToken('identifier', ''.join(got).strip())
+                got = []
+            got.append(char)
+        elif char in symbols:
+            if got:
+                yield EBNFToken('identifier', ''.join(got).strip())
+                got = []
+            yield EBNFToken('EBNFSymbol', char)
+        else:
+            got.append(char)
+    if got:
+        assert not quoted, errmsg_rule('unquoted terminal', rule)
+        yield EBNFToken('identifier', ''.join(got).strip())
 
 
 def errmsg(why, linum, idx):
@@ -87,3 +111,8 @@ def errmsg(why, linum, idx):
         'rhs_unquoted_equals': "Unquoted '=' on right hand side at",
     }[why] + " {}: {}".format(linum, idx)
 
+
+def errmsg_rule(why, rule):
+    return {
+        'unquoted terminal':   "Rule contains an unquoted terminal",
+    }[why] + ": {} - {}".format(*rule)
