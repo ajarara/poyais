@@ -62,12 +62,11 @@ def _split_assignments(line, linum, idx, state):
         state['lhs'].append(deref)
 
 
-# our types are
+# our token types are
 #   terminal (associated with contents)
 #   identifier (associated with contents)
 #   EBNFSymbol (associated with kind)
 # this could be improved on.
-
 EBNFToken = namedtuple('EBNFToken', ['type', 'contents'])
 
 EBNFSYMBOL = set('{[(|,)]}')
