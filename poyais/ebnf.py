@@ -63,17 +63,19 @@ def _split_assignments(line, linum, idx, state):
 
 
 # our token types are
-#   terminal (associated with contents)
-#   identifier (associated with contents)
+TERMINAL = "terminal"  # associated with literal contents
+IDENTIFIER = "identifier"  # associated with literal contents
+EBNFSymbol = "EBNFSymbol"  # associated with kind
+
 #   EBNFSymbol (associated with kind)
 # this could be improved on.
 EBNFToken = namedtuple('EBNFToken', ['type', 'contents'])
 
-EBNFSYMBOL = set('{[(|,)]}')
-QUOTES = {"'", '"'}
+EBNFSYMBOLS = frozenset('{[(|,)]}')
+QUOTES = frozenset("'\"")
 
 
-def parse_rule(rule, symbols=EBNFSYMBOL, quotes=QUOTES):
+def lex_rule(rule, symbols=EBNFSYMBOLS, quotes=QUOTES):
     rhs = rule.rhs
     quoted = False
     got = []
@@ -88,12 +90,16 @@ def parse_rule(rule, symbols=EBNFSYMBOL, quotes=QUOTES):
         elif char in quotes:
             quoted = char
             if got:
-                yield EBNFToken('identifier', ''.join(got).strip())
+                maybe = "".join(got).strip()
+                if is_valid_identifier(maybe):
+                    yield EBNFToken('identifier', maybe)
                 got = []
             got.append(char)
         elif char in symbols:
             if got:
-                yield EBNFToken('identifier', ''.join(got).strip())
+                maybe = "".join(got).strip()
+                if is_valid_identifier(maybe):
+                    yield EBNFToken('identifier', maybe)
                 got = []
             yield EBNFToken('EBNFSymbol', char)
         else:
@@ -101,6 +107,10 @@ def parse_rule(rule, symbols=EBNFSYMBOL, quotes=QUOTES):
     if got:
         assert not quoted, errmsg_rule('unquoted terminal', rule)
         yield EBNFToken('identifier', ''.join(got).strip())
+
+
+def is_valid_identifier(string):
+    return string and not string.isspace()
 
 
 def errmsg(why, linum, idx):
