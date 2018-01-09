@@ -10,28 +10,7 @@ import re
 
 Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 
-# from string import Formatter isn't particularly useful
-# or at least not immediately useful.
-DEPENDENT = re.compile('{(\S+)}')
 
-
-# given a string like this:
-# r'\({sexp}+'
-# this provides a native syntax to declare what non terminals depend on
-# changing dependent will break existing regs, which is a problem.
-def get_format_dependencies(string, delim=DEPENDENT):
-    for match in delim.finditer(string):
-        yield match.groups()
-
-
-
-# we can break down any expression into its dependencies
-# and literal matches (like parens, backticks, etc)
-# the problem here is that a bunch of lisp syntax rides regex syntax
-# so we need to identify what are regs and what are actual tokens
-# ie arithmetic, parens are the big culprits here.
-
-# we'll be using ebnf, particularly 
 def make_tagged_matcher(tag, regex_string):
     # build the regex, then return a function that takes a string,
     # applies the reg to the string, if it succeeds
