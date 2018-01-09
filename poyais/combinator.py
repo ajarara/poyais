@@ -11,6 +11,22 @@ import re
 Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 
 
+# to solve grouping, perhaps anonymous rules associated with a group
+# built right before parser build time.
+
+# to solve an optional, a parser can be or'd with the empty parser
+# ie something that always returns the empty string:
+#    this idea I like less, but it certainly is simple, because if the
+#    optional fails then the syntax is satisfied but doesn't actually
+#    move through the token stream
+
+# what about repeats?
+# one idea is to take a list of parsers, and them, and continually
+# apply the parser until there is no more output. One of the issues is
+# nonzero repetition. How does EBNF handle a fixed number of rhs
+# elements?
+
+
 def make_tagged_matcher(tag, regex_string):
     # build the regex, then return a function that takes a string,
     # applies the reg to the string, if it succeeds
