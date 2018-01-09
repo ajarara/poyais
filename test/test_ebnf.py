@@ -10,13 +10,30 @@ def test_rule_splitter():
     assert result[0] == Rule('foo', "'bar', 'bat' | 'baz'")
 
 
+def assert_all_tokens(tokens):
+    for token in tokens:
+        assert isinstance(token, EBNFToken)
+
+
+def assert_indices_all(tokens, ebnf_type, indices):
+    for idx in indices:
+        assert tokens[idx].type == ebnf_type
+
+
 def test_rule_lexer():
     rule = Rule('foo', """{ 'bar', "this" },\t"dance" |\nidentifier""")
     got = tuple(lex_rule(rule))
-    for token in got:
-        assert isinstance(token, EBNFToken)
-
     assert len(got) == 9
+
     # this feels brittle.
-    for idx in (0, 2, 4, 5, 7):
-        assert got[idx].type == EBNFSymbol
+    assert_all_tokens(got)
+    assert_indices_all(got, EBNFSymbol, (0, 2, 4, 5, 7))
+
+
+def test_rule_lexer_real_use_case():
+    rule = Rule('whitespace', '" " | "\t" | "\n"')
+    got = tuple(lex_rule(rule))
+    assert len(rule) == 5
+
+    assert_all_tokens(got)
+    assert_indices_all(got, EBNFSymbol, (0, 2, 4))

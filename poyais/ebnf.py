@@ -4,6 +4,7 @@ from collections import namedtuple
 # DIGIT = re.compile("[0-9]")
 
 Rule = namedtuple('Rule', ('lhs', 'rhs'))
+LexedRule = namedtuple('LexedRule', ('identifier', 'tokens'))
 
 
 def dispatch_charwise(dispatch, ebnf_string, state):
@@ -125,3 +126,8 @@ def errmsg_rule(why, rule):
     return {
         'unquoted terminal':   "Rule contains an unquoted terminal",
     }[why] + ": {} - {}".format(*rule)
+
+
+def ebnf_parser(ebnf_string):
+    for rule in split_into_rules(ebnf_string):
+        yield LexedRule(rule.rhs, tuple(lex_rule(rule)))
