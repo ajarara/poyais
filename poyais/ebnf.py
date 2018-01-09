@@ -128,6 +128,6 @@ def errmsg_rule(why, rule):
     }[why] + ": {} - {}".format(*rule)
 
 
-def ebnf_parser(ebnf_string):
+def ebnf_lexer(ebnf_string):
     for rule in split_into_rules(ebnf_string):
         yield LexedRule(rule.rhs, tuple(lex_rule(rule)))
