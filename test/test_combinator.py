@@ -1,4 +1,5 @@
 from poyais.combinator import make_tagged_matcher, and_parsers, or_parsers
+from poyais.combinator import Node
 from hypothesis.strategies import text
 from hypothesis import given
 import string
@@ -78,5 +79,12 @@ def test_and_or_or_comb():
         assert concat_tm_matches(yums(yummy)) == yummy
 
 
+def test_node_deep_iter():
+    b = Node(3, Node(4, Node(5, Node(
+            Node(1, Node(2, Node(3))), Node(10, Node(3))))))
+    assert b.deep_iter() == (3, 4, 5, (1, 2, 3), 10, 3)
+
+
 def concat_tm_matches(tms):
     return ''.join(x.match for x in tms)
+

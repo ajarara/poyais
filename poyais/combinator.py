@@ -1,4 +1,5 @@
 from collections import namedtuple
+from ebnf import ebnf_lexer
 import re
 
 
@@ -31,7 +32,42 @@ Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 # generate compiler front ends, for any target language, provided it
 # can be expressed in EBNF.
 
+class Node:
+    def __init__(self, val, link=None):
+        self.val = val
+        self.link = link
 
+    def __iter__(self):
+        here = self
+        yield here.val
+        while here.link is not None:
+            here = here.link
+            yield here.val
+
+    def deep_iter(self, _encountered=set()):
+        out = [self.val]
+        here = self.link
+        while here is not None:
+            if isinstance(here.val, Node):
+                if here not in _encountered:
+                    _encountered.add(here)
+                    out.append(here.val.deep_iter(_encountered))
+            else:
+                out.append(here.val)
+            here = here.link
+        return tuple(out)
+
+
+def resolve_rule(rule):
+    # we want to generate a parser from a series of EBNFTokens
+    # if the token we're looking at is an identifier, then
+    # we construct a Node that is the value.
+    pass
+
+
+def build_parser_from_lexed_rules(rules):
+    parser_table = {}
+    return parser_table
 
 
 def make_tagged_matcher(tag, regex_string):
