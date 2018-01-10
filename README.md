@@ -1,6 +1,6 @@
 # About
 
-Poyais is the beginnings of a Scheme implementing [r7rs](r7rs.com) targeting the JVM written in Python.
+Poyais is the beginnings of a Scheme implementing [r7rs](https://r7rs.com) targeting the JVM written in Python.
 
 # Why?
 
