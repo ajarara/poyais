@@ -14,6 +14,9 @@ Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 
 # to solve grouping, perhaps anonymous rules associated with a group
 # built right before parser build time.
+# the problem with this is that if we're building an AST 'keyed' by
+# identifiers those groups will show up in the AST structure.
+# I could just tag them as generated, and inline their results at parse time.
 
 # to solve an optional, a parser can be or'd with the empty parser
 # ie something that always returns the empty string:
@@ -58,10 +61,17 @@ class Node:
         return tuple(out)
 
 
+ResolvedRule = namedtuple('ResolvedRule', ('rule', 'dependencies'))
+
+
 def resolve_rule(rule):
-    # we want to generate a parser from a series of EBNFTokens
-    # if the token we're looking at is an identifier, then
-    # we construct a Node that is the value.
+    # we want to resolve the rule into a function that when passed the
+    # parser_table returns a complete parser. This is how we solve
+    # mutual recursion. Additionally we'll return all encountered
+    # so we can confirm all our dependencies exist at parser build
+    # time
+    def parser_generator(parser_table):
+        pass
     pass
 
 
