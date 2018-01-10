@@ -131,3 +131,7 @@ def errmsg_rule(why, rule):
 def ebnf_lexer(ebnf_string):
     for rule in split_into_rules(ebnf_string):
         yield LexedRule(rule.rhs, tuple(lex_rule(rule)))
+
+
+# but this isn't enough, we want more than a tokenized stream, instead we want an AST. 
+

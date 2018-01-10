@@ -24,7 +24,14 @@ Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 # one idea is to take a list of parsers, and them, and continually
 # apply the parser until there is no more output. One of the issues is
 # nonzero repetition. How does EBNF handle a fixed number of rhs
-# elements?
+# elements? I guess that's just a bunch of ands.
+
+# I think the trick behind MetaII is just reification of the parser
+# into source code.  If this could be done then this'd be a way to
+# generate compiler front ends, for any target language, provided it
+# can be expressed in EBNF.
+
+
 
 
 def make_tagged_matcher(tag, regex_string):
