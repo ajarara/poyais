@@ -1,5 +1,5 @@
 from collections import namedtuple
-from ebnf import ebnf_lexer
+from poyais.ebnf import ebnf_lexer
 import re
 
 
@@ -17,6 +17,14 @@ Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
 # the problem with this is that if we're building an AST 'keyed' by
 # identifiers those groups will show up in the AST structure.
 # I could just tag them as generated, and inline their results at parse time.
+
+# hmm.. this complicates parser implementation slightly, as now I have
+# to create add rules to the parser_table instead of just pointing to
+# it from within the parser.
+
+# an alternative I like better is to do recursive calls on groups,
+# having them be aware of terminating identifiers like }, ], ) and
+# returning.
 
 # to solve an optional, a parser can be or'd with the empty parser
 # ie something that always returns the empty string:
@@ -61,18 +69,13 @@ class Node:
         return tuple(out)
 
 
-ResolvedRule = namedtuple('ResolvedRule', ('rule', 'dependencies'))
+Parser = namedtuple('ResolvedRule', ('identifier', 'parser', 'dependencies'))
 
 
-def resolve_rule(rule):
-    # we want to resolve the rule into a function that when passed the
-    # parser_table returns a complete parser. This is how we solve
-    # mutual recursion. Additionally we'll return all encountered
-    # so we can confirm all our dependencies exist at parser build
-    # time
-    def parser_generator(parser_table):
-        pass
-    pass
+def resolve_rule(rule, parser_table):
+    # we want to resolve the rule into a parser. this parser looks up
+    # identifier parsers at parser time, from the parser_table
+    return make_parser(rule, parser_table, 0)
 
 
 def build_parser_from_lexed_rules(rules):
@@ -138,3 +141,49 @@ def optional_parser(parser):
     return or_parsers(
         parser,
         make_tagged_matcher('EMPTY', ''))
+
+
+COMBINATOR_MAP = {
+    '|': or_parsers,
+    ',': and_parsers,
+    '}': many_parser,
+    ']': optional_parser
+}
+
+
+# hmm.. this anonymous sub_rule extends well beyond groups
+
+# brackets, optionals behave this way as well (in fact implementing
+# groups once makes it easy to implement brackets, optionals
+# on a subset of rules.
+
+
+def make_parser(rule, parser_table, idx, sub_rule=False, cm=COMBINATOR_MAP):
+    stack = []
+    dependencies = {}
+    tokens = rule.rhs
+    combinator_state = None
+    while idx < len(tokens):
+        tok = tokens[idx]
+        if tok.type == 'EBNFSymbol':
+            if tok.contents == '(':
+                stack.append(
+                    make_parser(rule, parser_table, idx, sub_rule=True))
+            elif tok.contents == ')':
+                assert sub_rule, (
+                    "Unmatched or improperly nested parentheses in rule: "
+                    + rule.lhs)
+                # we don't have to fail on single token groups, but this
+                # makes implementation simpler.
+                assert len(stack) > 1, (
+                    "Empty or unnecessary group of size 1 in rule: "
+                    + rule.lhs)
+                assert combinator_state is not None, (
+                    "No combinator directive (and, or) in group in rule: "
+                    + rule.lhs)
+                return Parser('arbitrary',
+                              cm[combinator_state](*stack),
+                              dependencies)
+            elif tok.contents == combinator_state:
+                idx += 1
+        break

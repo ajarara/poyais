@@ -1,4 +1,5 @@
 from poyais.ebnf import Rule, split_into_rules, lex_rule, EBNFToken, EBNFSymbol
+from poyais.ebnf import TERMINAL
 
 
 def test_rule_splitter():
@@ -33,7 +34,8 @@ def test_rule_lexer():
 def test_rule_lexer_real_use_case():
     rule = Rule('whitespace', '" " | "\t" | "\n"')
     got = tuple(lex_rule(rule))
-    assert len(rule) == 5
+    assert len(got) == 5
 
     assert_all_tokens(got)
-    assert_indices_all(got, EBNFSymbol, (0, 2, 4))
+    assert_indices_all(got, TERMINAL, (0, 2, 4))
+    assert_indices_all(got, EBNFSymbol, (1, 3))

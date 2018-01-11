@@ -9,7 +9,7 @@ import string
 def test_make_parser_returns_fun(literal_reg):
     func = make_tagged_matcher('foo', literal_reg)
 
-    tm = func(literal_reg)
+    tm = func(literal_reg, 0)
     assert len(tm) == 1
     assert tm[0].match == literal_reg
 
@@ -21,7 +21,7 @@ def test_and_parsers_joins_parsers(reg1, reg2):
     p2 = make_tagged_matcher('bar', reg2)
 
     func = and_parsers(p1, p2)
-    tms = func(reg1 + reg2)
+    tms = func(reg1 + reg2, 0)
     assert tms[0].match == reg1
     assert tms[1].match == reg2
 
@@ -33,11 +33,11 @@ def test_or_parsers_acts_as_either(reg1, reg2):
     p2 = make_tagged_matcher('bar', reg2)
 
     func = or_parsers(p1, p2)
-    tm1 = func(reg1)
+    tm1 = func(reg1, 0)
     assert len(tm1) == 1
     assert reg1.startswith(tm1[0].match)
 
-    tm2 = func(reg2)
+    tm2 = func(reg2, 0)
     assert len(tm2) == 1
     assert reg2.startswith(tm2[0].match)
 
@@ -56,11 +56,11 @@ def test_or_and_and_comb():
     applepie = and_parsers(p2, p3)
     anypie = or_parsers(honeypie, applepie)
 
-    assert concat_tm_matches(honeypie('honeypie')) == 'honeypie'
-    assert concat_tm_matches(applepie('applepie')) == 'applepie'
+    assert concat_tm_matches(honeypie('honeypie', 0)) == 'honeypie'
+    assert concat_tm_matches(applepie('applepie', 0)) == 'applepie'
 
-    assert concat_tm_matches(anypie('honeypie')) == 'honeypie'
-    assert concat_tm_matches(anypie('applepie')) == 'applepie'
+    assert concat_tm_matches(anypie('honeypie', 0)) == 'honeypie'
+    assert concat_tm_matches(anypie('applepie', 0)) == 'applepie'
 
 
 def test_and_or_or_comb():
@@ -76,7 +76,7 @@ def test_and_or_or_comb():
 
     for yummy in ('peachcobbler', 'broccolicobbler',
                   'peaches', 'broccolies'):
-        assert concat_tm_matches(yums(yummy)) == yummy
+        assert concat_tm_matches(yums(yummy, 0)) == yummy
 
 
 def test_node_deep_iter():
