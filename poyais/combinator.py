@@ -86,19 +86,19 @@ def make_tagged_matcher(tag, regex_string):
     # return a tagged match with the tag and the string that matched.
     reg = re.compile(regex_string)
 
-    def parser(string):
-        match = reg.match(string)
+    def parser(string, pos):
+        match = reg.match(string, pos)
         if match:
             return (Tagged_Match(tag, match.group()),)
     return parser
 
 
 def and_parsers(*parsers):
-    def parser(string):
+    def parser(string, pos):
         out = []
-        idx = 0
+        idx = pos
         for p in parsers:
-            maybe = p(string[idx:])
+            maybe = p(string, idx)
             if maybe:
                 for tagged_match in maybe:
                     out.append(tagged_match)
@@ -112,11 +112,29 @@ def and_parsers(*parsers):
 
 
 def or_parsers(*parsers):
-    def parser(string):
+    def parser(string, pos):
         for p in parsers:
-            maybe = p(string)
+            maybe = p(string, pos)
             if maybe:
                 return maybe
         else:
             return ()
     return parser
+
+
+# passes on 0 matches, see optional_parser
+def many_parser(parser):
+    def parser(string, pos):
+        out = []
+        maybe = parser(string, pos)
+        while maybe:
+            out.append(maybe)
+            maybe = parser(string, pos + len(maybe))
+        return tuple(out)
+    return optional_parser(parser)
+
+
+def optional_parser(parser):
+    return or_parsers(
+        parser,
+        make_tagged_matcher('EMPTY', ''))
