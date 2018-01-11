@@ -143,12 +143,19 @@ def optional_parser(parser):
         make_tagged_matcher('EMPTY', ''))
 
 
+def group_parser(*parser):
+    pass
+
+
 COMBINATOR_MAP = {
     '|': or_parsers,
     ',': and_parsers,
     '}': many_parser,
-    ']': optional_parser
+    ']': optional_parser,
+    ')': group_parser
 }
+
+GROUP_SYMBOLS = {'{', '[', '('}
 
 
 # hmm.. this anonymous sub_rule extends well beyond groups
@@ -158,7 +165,11 @@ COMBINATOR_MAP = {
 # on a subset of rules.
 
 
-def make_parser(rule, parser_table, idx, sub_rule=False, cm=COMBINATOR_MAP):
+# this is one of those seams where we could transform this into an
+# analog of MetaII.  instead of building runtime parsers, we could
+# emit code that built these parsers after we did the case dispatch.
+def make_parser(rule, parser_table, idx, sub_rule=False,
+                combinator_map=COMBINATOR_MAP, group_symbols=GROUP_SYMBOLS):
     stack = []
     dependencies = {}
     tokens = rule.rhs
@@ -166,10 +177,11 @@ def make_parser(rule, parser_table, idx, sub_rule=False, cm=COMBINATOR_MAP):
     while idx < len(tokens):
         tok = tokens[idx]
         if tok.type == 'EBNFSymbol':
-            if tok.contents == '(':
+            if tok.contents in group_symbols:
                 stack.append(
-                    make_parser(rule, parser_table, idx, sub_rule=True))
-            elif tok.contents == ')':
+                    make_parser(rule, parser_table, idx + 1,
+                                sub_rule=tok.contents))
+            elif tok.contents == sub_rule:
                 assert sub_rule, (
                     "Unmatched or improperly nested parentheses in rule: "
                     + rule.lhs)
@@ -182,8 +194,9 @@ def make_parser(rule, parser_table, idx, sub_rule=False, cm=COMBINATOR_MAP):
                     "No combinator directive (and, or) in group in rule: "
                     + rule.lhs)
                 return Parser('arbitrary',
-                              cm[combinator_state](*stack),
+                              combinator_map[combinator_state](*stack),
                               dependencies)
             elif tok.contents == combinator_state:
+                # simply ignore this
                 idx += 1
         break
