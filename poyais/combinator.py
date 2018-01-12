@@ -9,7 +9,7 @@ import re
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
 
-LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
+RuleMatch = namedtuple('LanguageToken', ('tag', 'match'))
 
 
 # to solve grouping, perhaps anonymous rules associated with a group
@@ -43,35 +43,6 @@ LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 # generate compiler front ends, for any target language, provided it
 # can be expressed in EBNF.
 
-class Node:
-    def __init__(self, val, link=None):
-        self.val = val
-        self.link = link
-
-    def __iter__(self):
-        here = self
-        yield here.val
-        while here.link is not None:
-            here = here.link
-            yield here.val
-
-    def deep_iter(self, _encountered=set()):
-        out = [self.val]
-        here = self.link
-        while here is not None:
-            if isinstance(here.val, Node):
-                if here not in _encountered:
-                    _encountered.add(here)
-                    out.append(here.val.deep_iter(_encountered))
-            else:
-                out.append(here.val)
-            here = here.link
-        return tuple(out)
-
-
-Parser = namedtuple('Parser', ('identifier', 'parser', 'dependencies'))
-
-
 def resolve_rule(rule, parser_table):
     # we want to resolve the rule into a parser. this parser looks up
     # identifier parsers at parser time, from the parser_table
@@ -90,9 +61,7 @@ def make_tagged_matcher(tag, regex_string):
     reg = re.compile(regex_string)
 
     def parser(string, pos):
-        match = reg.match(string, pos)
-        if match:
-            return (LanguageToken(tag, match.group()),)
+        return reg.match(string, pos)
     return parser
 
 
@@ -103,9 +72,8 @@ def and_parsers(*parsers):
         for p in parsers:
             maybe = p(string, idx)
             if maybe:
-                for tagged_match in maybe:
-                    out.append(tagged_match)
-                    idx += len(tagged_match.match)
+                out.append(maybe)
+                idx += len(maybe)
             else:
                 # one of the parsers failed. Stop parsing,
                 # fail the whole parser.
@@ -168,6 +136,36 @@ def companion_complements(group_symbol, _cache={},
         _cache[group_symbol] = _companions.difference(group_symbol)
 
     return _cache[group_symbol]
+
+
+def top_level_build_rule_parser(rule):
+    # this does not need an identifier, but it does
+    # need a parse_table
+    # we can defer looking at the parse_table by wrapping it in a
+    # lambda that imitates the parser but really just passes it along
+    # to a lookup on the table
+    return build_rule_parser(
+        rule.lhs, iter(rule.rhs), combinator_state=None,
+        sub_rule=False, dependencies=set())
+
+
+def build_rule_parser(identifier, it, combinator_state, sub_rule, dependencies,
+               combinator_map=COMBINATOR_MAP,
+               group_companions=GROUP_COMPANIONS):
+    # we want this local separate for group isolation
+    # on recursive calls
+    stack = []
+    try:
+        while True:
+            # this needs a reference to the iterator
+            # also, is this the correct way to manually iterate over
+            # an iterator? seems wrong.
+            dispatch_token(next(it), stack, state)
+    except StopIteration:
+        # once we hit here we're out of tokens
+        # assuming we've caught all errors that can happen in the middle
+        # of building, what can go wrong at the end?
+        pass
 
 
 # this is one of those seams where we could transform this into an
