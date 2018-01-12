@@ -9,7 +9,7 @@ import re
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
 
-Tagged_Match = namedtuple('Tagged_Match', ('tag', 'match'))
+LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 
 
 # to solve grouping, perhaps anonymous rules associated with a group
@@ -69,7 +69,7 @@ class Node:
         return tuple(out)
 
 
-Parser = namedtuple('ResolvedRule', ('identifier', 'parser', 'dependencies'))
+Parser = namedtuple('Parser', ('identifier', 'parser', 'dependencies'))
 
 
 def resolve_rule(rule, parser_table):
@@ -92,7 +92,7 @@ def make_tagged_matcher(tag, regex_string):
     def parser(string, pos):
         match = reg.match(string, pos)
         if match:
-            return (Tagged_Match(tag, match.group()),)
+            return (LanguageToken(tag, match.group()),)
     return parser
 
 
@@ -127,14 +127,14 @@ def or_parsers(*parsers):
 
 # passes on 0 matches, see optional_parser
 def many_parser(parser):
-    def parser(string, pos):
+    def p(string, pos):
         out = []
         maybe = parser(string, pos)
         while maybe:
             out.append(maybe)
             maybe = parser(string, pos + len(maybe))
         return tuple(out)
-    return optional_parser(parser)
+    return optional_parser(p)
 
 
 def optional_parser(parser):
@@ -143,8 +143,8 @@ def optional_parser(parser):
         make_tagged_matcher('EMPTY', ''))
 
 
-def group_parser(*parser):
-    pass
+def group_parser(parser):
+    return parser
 
 
 COMBINATOR_MAP = {
@@ -155,48 +155,98 @@ COMBINATOR_MAP = {
     ')': group_parser
 }
 
-GROUP_SYMBOLS = {'{', '[', '('}
+GROUP_COMPANIONS = {
+    '{': '}',
+    '(': ')',
+    '[': ']'
+}
 
 
-# hmm.. this anonymous sub_rule extends well beyond groups
+def companion_complements(group_symbol, _cache={},
+                          _companions=frozenset('}])')):
+    if group_symbol not in _cache:
+        _cache[group_symbol] = _companions.difference(group_symbol)
 
-# brackets, optionals behave this way as well (in fact implementing
-# groups once makes it easy to implement brackets, optionals
-# on a subset of rules.
+    return _cache[group_symbol]
 
 
 # this is one of those seams where we could transform this into an
 # analog of MetaII.  instead of building runtime parsers, we could
 # emit code that built these parsers after we did the case dispatch.
 def make_parser(rule, parser_table, idx, sub_rule=False,
-                combinator_map=COMBINATOR_MAP, group_symbols=GROUP_SYMBOLS):
+                combinator_map=COMBINATOR_MAP,
+                group_companions=GROUP_COMPANIONS):
     stack = []
-    dependencies = {}
+    dependencies = set()
     tokens = rule.rhs
     combinator_state = None
     while idx < len(tokens):
         tok = tokens[idx]
         if tok.type == 'EBNFSymbol':
-            if tok.contents in group_symbols:
-                stack.append(
-                    make_parser(rule, parser_table, idx + 1,
-                                sub_rule=tok.contents))
-            elif tok.contents == sub_rule:
-                assert sub_rule, (
-                    "Unmatched or improperly nested parentheses in rule: "
-                    + rule.lhs)
-                # we don't have to fail on single token groups, but this
-                # makes implementation simpler.
-                assert len(stack) > 1, (
-                    "Empty or unnecessary group of size 1 in rule: "
-                    + rule.lhs)
-                assert combinator_state is not None, (
-                    "No combinator directive (and, or) in group in rule: "
-                    + rule.lhs)
-                return Parser('arbitrary',
-                              combinator_map[combinator_state](*stack),
-                              dependencies)
-            elif tok.contents == combinator_state:
-                # simply ignore this
+            symbol = tok.contents
+            assert symbol, _err_msg(
+                'lord_have_mercy', rule, idx)
+            if sub_rule is not None:
+                assert symbol not in companion_complements(sub_rule), (
+                    _err_msg('improperly_nested', rule, symbol,
+                             group_companions[sub_rule]))
+
+            if symbol in group_companions:
+                moved, parser = make_parser(
+                    rule, parser_table, idx + 1,
+                    sub_rule=group_companions[symbol])
+                idx = moved
+                stack.append(parser)
+            # if we've hit the end of our sub_rule, apply it
+            # to our accumulated stack, return it to caller
+            elif symbol == sub_rule:
+                assert stack, (
+                    _err_msg('empty_grouping', rule, sub_rule))
+                if len(stack) == 1:
+                    return idx, stack[0]
+                return idx, Parser('arbitrary',
+                                   combinator_map[combinator_state](*stack),
+                                   dependencies)
+            # at this point, we've handled all the grouping logic
+            elif symbol == combinator_state:
+                # defer joining the parsers on the stack
+                # as late as possible (this reduces the number
+                # of functions significantly)
                 idx += 1
-        break
+            elif combinator_state is None:
+                combinator_state = symbol
+                idx += 1
+            elif symbol != combinator_state:
+                stack.append(Parser(
+                    'arbitrary',
+                    combinator_map[combinator_state](*stack),
+                    dependencies))
+                idx += 1
+                combinator_state = symbol
+            else:
+                assert False, "unreachable code. No context for you."
+        elif tok.type == 'terminal':
+            stack.append(
+                # need to rethink some data types.
+                make_matcher(tok.contents))
+        elif tok.type == 'identifier':
+            dependencies.add(tok.contents)
+            # problem here... mutual recursion fails this.
+            stack.append(parser_table[tok.contents])
+        else:
+            assert False, (
+                "unreachable code again. This is a nonzero amount of context")
+
+
+def _err_msg(err_name, *args):
+    return {
+        'lord_have_mercy': lambda rule, idx: "\n".join((
+            "Rule {} contains an empty symbol. This isn't your",
+            "fault, it's mine. Unless you're me.")).format(rule.lhs, idx),
+        'improperly_nested': lambda rule, got, expected: "\n".join((
+            "Improperly nested grouping operator in rule {}:",
+            "Got: {}, Expected: {}")).format(rule.lhs, got, expected),
+        'empty_grouping': lambda rule, sub_rule: "\n".join((
+            "Rule {} contains an empty grouping ending with {}".format(
+                rule.lhs, sub_rule)))
+        }[err_name](*args)
