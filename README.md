@@ -25,7 +25,7 @@ digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 math symbol = "+" | "-" | "/" | "*" ;
 whitespace = " " | "\t" | "\n" ;
 
-character = letter | digit ;
+character = letter | digit | math symbol ;
 symbol = ( letter | math symbol ) , { character } ;
 sexp = "(" , [ whitespace ] , symbol , { whitespace , symbol }, [ whitespace ], ")" ;
 quote = "'" ;
@@ -42,3 +42,9 @@ The parser should emit an AST. In the case of lisp, it's more convenient to flat
 
 It's a little strange to see r7rs mention scheme as never destroying lisp objects but having mutation in the language. What does destroy really mean here?
 
+Just gonna rubber duck why I'm having issues on finishing the combinator.
+- Have primitives like and, or, optional, grouping
+- Tuples don't provide a good way to combine parsers. Instead, I should use a tree to relay results to callers, tagged with total length consumed so that subsequent parsers have the info they need to seek into the string.
+- This changes the result of groups. We want to lift only these into their calling rules. We only key our tree by identifiers. 
+- Currently, we take a group, and before returning it to the caller we glob it up into a single parser.
+- This is probably fine, instead we want to reflect the ast in the returned data type. Which means wrapping only the calls to other identifiers in Nodes, everything else can be dropped.
