@@ -34,6 +34,7 @@ class Node:
             yield here.value
             here = here.link
 
+    @memoize
     def __len__(self):
         return len(self.value) + (
             len(self.link) if self.link else 0)
