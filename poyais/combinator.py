@@ -14,6 +14,30 @@ RuleMatch = namedtuple('LanguageToken', ('tag', 'match'))
 UtilityMatch = namedtuple('UtilityToken', ('tag', 'match'))
 
 
+def node_from_iterable(it):
+    got = reversed(it)
+    here = None
+    for thing in got:
+        here = Node(thing, here)
+    return here
+
+
+class Node:
+    def __init__(self, value, link=None):
+        self.value = value
+        assert link is None or isinstance(link, Node)
+        self.link = link
+
+    def __iter__(self):
+        here = self
+        while here is not None:
+            yield here.value
+            here = here.link
+
+    def __len__(self):
+        return len(self.value) + (
+            len(self.link) if self.link else 0)
+
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
 # returning to caller.
