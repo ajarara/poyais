@@ -1,5 +1,6 @@
 from collections import namedtuple
 # from poyais.ebnf import ebnf_lexer
+from utility import memoize
 import re
 
 
@@ -114,6 +115,7 @@ GROUP_COMPANIONS = {
 }
 
 
+@memoize
 def companion_complements(group_symbol, companions=frozenset('}])')):
     return companions.difference(group_symbol)
 
