@@ -1,6 +1,6 @@
 from collections import namedtuple
 # from poyais.ebnf import ebnf_lexer
-from utility import memoize
+from poyais.utility import memoize
 import re
 
 
@@ -36,15 +36,26 @@ UtilityMatch = namedtuple('UtilityToken', ('tag', 'match'))
 # can be expressed in EBNF.
 
 
-def make_tagged_matcher(match_type, tag, regex_string):
+def _make_tagged_matcher(match_type, tag, regex_string):
     # build the regex, then return a function that takes a string,
     # applies the reg to the string, if it succeeds
     # return a tagged match with the tag and the string that matched.
     reg = re.compile(regex_string)
 
     def parser(string, pos):
-        return reg.match(string, pos)
+        maybe = reg.match(string, pos)
+        if maybe:
+            return match_type(tag, maybe.group()),
     return parser
+
+
+def make_tagged_matcher(tag, regex_string):
+    return _make_tagged_matcher(RuleMatch, tag, regex_string)
+
+
+def make_anonymous_matcher(tag, regex_string):
+    "For internal use, just for optional_parser implementation"
+    return _make_tagged_matcher(UtilityMatch, tag, regex_string)
 
 
 def and_parsers(*parsers):
@@ -87,9 +98,6 @@ def many_parser(parser):
     return optional_parser(p)
 
 
-EMPTY_PARSER = make_tagged_matcher(UtilityMatch, 'Empty', '')
-
-
 def optional_parser(parser):
     return or_parsers(
         parser,
@@ -99,6 +107,8 @@ def optional_parser(parser):
 def group_parser(parser):
     return parser
 
+
+EMPTY_PARSER = make_anonymous_matcher('Empty', '')
 
 COMBINATOR_MAP = {
     '|': or_parsers,
