@@ -1,5 +1,5 @@
 from collections import namedtuple
-from poyais.ebnf import ebnf_lexer
+# from poyais.ebnf import ebnf_lexer
 import re
 
 
@@ -10,27 +10,18 @@ import re
 # a generator that yields a number of tagged matches:
 
 RuleMatch = namedtuple('LanguageToken', ('tag', 'match'))
+UtilityMatch = namedtuple('UtilityToken', ('tag', 'match'))
 
-
-# to solve grouping, perhaps anonymous rules associated with a group
-# built right before parser build time.
-# the problem with this is that if we're building an AST 'keyed' by
-# identifiers those groups will show up in the AST structure.
-# I could just tag them as generated, and inline their results at parse time.
-
-# hmm.. this complicates parser implementation slightly, as now I have
-# to create add rules to the parser_table instead of just pointing to
-# it from within the parser.
 
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
-# returning.
+# returning to caller.
 
 # to solve an optional, a parser can be or'd with the empty parser
-# ie something that always returns the empty string:
-#    this idea I like less, but it certainly is simple, because if the
-#    optional fails then the syntax is satisfied but doesn't actually
-#    move through the token stream
+# ie, something that always returns the empty string
+# this parser should returns a match that is out of band, so that we can
+# reliably filter it from output.
+
 
 # what about repeats?
 # one idea is to take a list of parsers, and them, and continually
@@ -43,18 +34,8 @@ RuleMatch = namedtuple('LanguageToken', ('tag', 'match'))
 # generate compiler front ends, for any target language, provided it
 # can be expressed in EBNF.
 
-def resolve_rule(rule, parser_table):
-    # we want to resolve the rule into a parser. this parser looks up
-    # identifier parsers at parser time, from the parser_table
-    return make_parser(rule, parser_table, 0)
 
-
-def build_parser_from_lexed_rules(rules):
-    parser_table = {}
-    return parser_table
-
-
-def make_tagged_matcher(tag, regex_string):
+def make_tagged_matcher(match_type, tag, regex_string):
     # build the regex, then return a function that takes a string,
     # applies the reg to the string, if it succeeds
     # return a tagged match with the tag and the string that matched.
@@ -105,10 +86,13 @@ def many_parser(parser):
     return optional_parser(p)
 
 
+EMPTY_PARSER = make_tagged_matcher(UtilityMatch, 'Empty', '')
+
+
 def optional_parser(parser):
     return or_parsers(
         parser,
-        make_tagged_matcher('EMPTY', ''))
+        EMPTY_PARSER)
 
 
 def group_parser(parser):
@@ -130,42 +114,8 @@ GROUP_COMPANIONS = {
 }
 
 
-def companion_complements(group_symbol, _cache={},
-                          _companions=frozenset('}])')):
-    if group_symbol not in _cache:
-        _cache[group_symbol] = _companions.difference(group_symbol)
-
-    return _cache[group_symbol]
-
-
-def top_level_build_rule_parser(rule):
-    # this does not need an identifier, but it does
-    # need a parse_table
-    # we can defer looking at the parse_table by wrapping it in a
-    # lambda that imitates the parser but really just passes it along
-    # to a lookup on the table
-    return build_rule_parser(
-        rule.lhs, iter(rule.rhs), combinator_state=None,
-        sub_rule=False, dependencies=set())
-
-
-def build_rule_parser(identifier, it, combinator_state, sub_rule, dependencies,
-               combinator_map=COMBINATOR_MAP,
-               group_companions=GROUP_COMPANIONS):
-    # we want this local separate for group isolation
-    # on recursive calls
-    stack = []
-    try:
-        while True:
-            # this needs a reference to the iterator
-            # also, is this the correct way to manually iterate over
-            # an iterator? seems wrong.
-            dispatch_token(next(it), stack, state)
-    except StopIteration:
-        # once we hit here we're out of tokens
-        # assuming we've caught all errors that can happen in the middle
-        # of building, what can go wrong at the end?
-        pass
+def companion_complements(group_symbol, companions=frozenset('}])')):
+    return companions.difference(group_symbol)
 
 
 # this is one of those seams where we could transform this into an
