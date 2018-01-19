@@ -48,3 +48,62 @@ Just gonna rubber duck why I'm having issues on finishing the combinator.
 - This changes the result of groups. We want to lift only these into their calling rules. We only key our tree by identifiers. 
 - Currently, we take a group, and before returning it to the caller we glob it up into a single parser.
 - This is probably fine, instead we want to reflect the ast in the returned data type. Which means wrapping only the calls to other identifiers in Nodes, everything else can be dropped.
+
+## should we return linked lists generally from our parsers?
+I think the answer is no. The only time we want to return (and expect) a Node is from a parse_table call. That should be an element in the output AST, but the others should be a tuple of tokens. 
+
+That's... confusing. Now we have to do a type dispatch.
+
+Well.. 
+
+
+# case dispatch
+Now the cases we must consider are when:
+* We hit a terminal
+  * Conditions we need:
+    * We hit a terminal
+  * What we do:
+    We wrap the terminal in a parser
+    Unset just_encountered\_combinator
+    
+* We hit a grouping start
+  * Conditions we need:
+    * Either there is nothing on the parser stack or we just encountered either "|" or ","
+  * What we do:
+    We recurse, passing in the iterator we were passed, and expect to see a grouping end corresponding with the one we just saw.
+    
+* We hit a grouping end
+  * Conditions we need:
+    * Start corresponds to the end, groups are properly nested.
+    * At least one parser on the stack
+    * Either:
+      * One parser on the stack, no combinator state
+      * Many parsers on the stack, some combinator state
+  * What we do:
+    If there is only one parser on the stack, just return it.
+    If there are many parsers on the stack, flatten them, return that.
+    
+* We hit a combinator
+  * Conditions we need:
+    * At least one parser on the stack
+    * A parser after it (needs to be evaluated first)
+    * just_encountered\_combinator is unset
+  * What we do
+    * If combinator_state is the same, set just\_encountered\_combinator
+    * If combinator_state is None, set it,
+    * If combinator_state is different (ie 'and' is state and we found 'or'), flatten the parsers on the stack wrt the combinator\_state, then set combinator\_state to be the new one
+
+* we hit an identifier
+  * Conditions we need:
+    * We hit an identifier
+  * What we do:
+    More complicated. We need to relay that this is a sub rule. One way is to tag the results of these so that later stages nest them. Alternatively we can just nest them immediately, but this approach is gonna be complicated.
+    
+
+* we hit the end
+  * What we need:
+    * There's at least one parser on the stack.
+    * Either:
+      Combinator_state is unset, there's only one parser on the stack
+      Combinator\_state is set, there's more than one parser on the stack
+    * grouping_start is unset
