@@ -63,14 +63,14 @@ Now the cases we must consider are when:
   * Conditions we need:
     * We hit a terminal
   * What we do:
-    We wrap the terminal in a parser
-    Unset just_encountered\_combinator
+    * We wrap the terminal in a parser
+    * Unset just_encountered\_combinator
     
 * We hit a grouping start
   * Conditions we need:
     * Either there is nothing on the parser stack or we just encountered either "|" or ","
   * What we do:
-    We recurse, passing in the iterator we were passed, and expect to see a grouping end corresponding with the one we just saw.
+    * We recurse, passing in the iterator we were passed, and expect to see a grouping end corresponding with the one we just saw.
     
 * We hit a grouping end
   * Conditions we need:
@@ -80,8 +80,8 @@ Now the cases we must consider are when:
       * One parser on the stack, no combinator state
       * Many parsers on the stack, some combinator state
   * What we do:
-    If there is only one parser on the stack, just return it.
-    If there are many parsers on the stack, flatten them, return that.
+    * If there is only one parser on the stack, just return it.
+    * If there are many parsers on the stack, flatten them, return that.
     
 * We hit a combinator
   * Conditions we need:
@@ -97,13 +97,13 @@ Now the cases we must consider are when:
   * Conditions we need:
     * We hit an identifier
   * What we do:
-    More complicated. We need to relay that this is a sub rule. One way is to tag the results of these so that later stages nest them. Alternatively we can just nest them immediately, but this approach is gonna be complicated.
+    * More complicated. We need to relay that this is a sub rule. One way is to tag the results of these so that later stages nest them. Alternatively we can just nest them immediately, but this approach is gonna be complicated.
     
 
 * we hit the end
   * What we need:
     * There's at least one parser on the stack.
     * Either:
-      Combinator_state is unset, there's only one parser on the stack
-      Combinator\_state is set, there's more than one parser on the stack
+      * Combinator_state is unset, there's only one parser on the stack
+      * Combinator\_state is set, there's more than one parser on the stack
     * grouping_start is unset
