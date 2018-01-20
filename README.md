@@ -97,7 +97,7 @@ Now the cases we must consider are when:
   * Conditions we need:
     * We hit an identifier
   * What we do:
-    * More complicated. We need to relay that this is a sub rule. One way is to tag the results of these so that later stages nest them. Alternatively we can just nest them immediately, but this approach is gonna be complicated.
+    * More complicated. We need to relay that this is a sub rule. One way is to tag the results of these so that later stages nest them. Alternatively we can just nest them immediately, but this approach is gonna be complicated. We could do this by wrapping our parsed rule in a utility token...
     
 
 * we hit the end
