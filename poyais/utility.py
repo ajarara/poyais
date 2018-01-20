@@ -1,3 +1,4 @@
+import re
 
 
 def memoize(fun):
@@ -16,27 +17,35 @@ def memoize(fun):
     return memoized
 
 
-# to be used for a quick interval tree
-class BSTNode:
+def node_from_iterable(it):
+    got = reversed(it)
+    here = None
+    for thing in got:
+        here = Node(thing, here)
+    return here
 
-    def __init__(self, val, left=None, right=None):
-        for arg in (left, right):
-            assert(arg is None or isinstance(arg, BSTNode))
 
-        if left and right:
-            assert left.val <= right.val
-        self.left = left
-        self.right = right
-        self.val = val
+class Node:
+    def __init__(self, value, link=None):
+        self.value = value
+        assert link is None or isinstance(link, Node)
+        self.link = link
 
-    def insert(self, val):
-        if val <= self.val:
-            if self.left is None:
-                self.left = BSTNode(val)
-            else:
-                self.left.insert(val)
-        elif val > self.val:
-            if self.right is None:
-                self.right = BSTNode(val)
-            else:
-                self.right.insert(val)
+    def __iter__(self):
+        here = self
+        while here is not None:
+            yield here.value
+            here = here.link
+
+    # @memoize
+    def __len__(self):
+        return len(self.value) + (
+            len(self.link) if self.link else 0)
+
+
+# this makes it so that all we need to report parse errors is the
+# index at which it occured.
+def build_idx_line_map(program_string):
+    newline_reg = re.compile("\n")
+    # thank you tim sort
+    return sorted(x.start() for x in newline_reg.finditer(program_string))
