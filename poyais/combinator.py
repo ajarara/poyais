@@ -1,6 +1,6 @@
 from collections import namedtuple
 # from poyais.ebnf import ebnf_lexer
-from poyais.utility import memoize
+from poyais.utility import Node, node_from_iterable
 import re
 
 
@@ -10,34 +10,10 @@ import re
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
 
-RuleMatch = namedtuple('LanguageToken', ('tag', 'match'))
-UtilityMatch = namedtuple('UtilityToken', ('tag', 'match'))
+LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
+UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
 
 
-def node_from_iterable(it):
-    got = reversed(it)
-    here = None
-    for thing in got:
-        here = Node(thing, here)
-    return here
-
-
-class Node:
-    def __init__(self, value, link=None):
-        self.value = value
-        assert link is None or isinstance(link, Node)
-        self.link = link
-
-    def __iter__(self):
-        here = self
-        while here is not None:
-            yield here.value
-            here = here.link
-
-    # @memoize
-    def __len__(self):
-        return len(self.value) + (
-            len(self.link) if self.link else 0)
 
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
@@ -70,19 +46,20 @@ def _make_tagged_matcher(match_type, tag, regex_string):
     def parser(string, pos):
         maybe = reg.match(string, pos)
         if maybe:
-            return match_type(tag, maybe.group()),
+            return Node(match_type(tag, maybe.group()))
     return parser
 
 
 def make_tagged_matcher(tag, regex_string):
-    return _make_tagged_matcher(RuleMatch, tag, regex_string)
+    return _make_tagged_matcher(LanguageToken, tag, regex_string)
 
 
 def make_anonymous_matcher(tag, regex_string):
     "For internal use, just for optional_parser implementation"
-    return _make_tagged_matcher(UtilityMatch, tag, regex_string)
+    return _make_tagged_matcher(UtilityToken, tag, regex_string)
 
 
+# Many<parsers> -> parser -> Optional<Node>
 def and_parsers(*parsers):
     def parser(string, pos):
         out = []
@@ -95,11 +72,12 @@ def and_parsers(*parsers):
             else:
                 # one of the parsers failed. Stop parsing,
                 # fail the whole parser.
-                return ()
-        return tuple(out)
+                return None
+        return node_from_iterable(out)
     return parser
 
 
+# Many<parsers> -> parser -> Optional<Node>
 def or_parsers(*parsers):
     def parser(string, pos):
         for p in parsers:
@@ -107,11 +85,11 @@ def or_parsers(*parsers):
             if maybe:
                 return maybe
         else:
-            return ()
+            return None
     return parser
 
 
-# passes on 0 matches, see optional_parser
+# parser -> parser -> Optional<Node>
 def many_parser(parser):
     def p(string, pos):
         out = []
@@ -119,16 +97,18 @@ def many_parser(parser):
         while maybe:
             out.append(maybe)
             maybe = parser(string, pos + len(maybe))
-        return tuple(out)
+        return node_from_iterable(out)
     return optional_parser(p)
 
 
+# parser -> parser
 def optional_parser(parser):
     return or_parsers(
         parser,
         EMPTY_PARSER)
 
 
+# parser -> parser
 def group_parser(parser):
     return parser
 
@@ -155,7 +135,11 @@ def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
     return companions.difference(group_companions(group_symbol))
 
 
-def err_msg(err_name, *args):
+def make_parser_from_terminal(terminal, idx, state, _cache={}):
+    assert state['just_encountered_combinator'] or state['beginning']
+    
+
+def errmsg(err_name, *args):
     return {
         'lord_have_mercy': lambda rule, idx: "\n".join((
             "Rule {} contains an empty symbol. This isn't your",
