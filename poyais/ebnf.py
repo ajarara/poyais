@@ -1,8 +1,5 @@
 from collections import namedtuple
 
-# LETTER = re.compile("[a-zA-Z]")
-# DIGIT = re.compile("[0-9]")
-
 Rule = namedtuple('Rule', ('lhs', 'rhs'))
 LexedRule = namedtuple('LexedRule', ('identifier', 'tokens'))
 
