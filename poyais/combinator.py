@@ -150,80 +150,12 @@ GROUP_COMPANIONS = {
 }
 
 
-@memoize
-def companion_complements(group_symbol, companions=frozenset('}])')):
-    return companions.difference(group_symbol)
+def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
+                          companions=frozenset('}])')):
+    return companions.difference(group_companions(group_symbol))
 
 
-# this is one of those seams where we could transform this into an
-# analog of MetaII.  instead of building runtime parsers, we could
-# emit code that built these parsers after we did the case dispatch.
-def make_parser(rule, parser_table, idx, sub_rule=False,
-                combinator_map=COMBINATOR_MAP,
-                group_companions=GROUP_COMPANIONS):
-    stack = []
-    dependencies = set()
-    tokens = rule.rhs
-    combinator_state = None
-    while idx < len(tokens):
-        tok = tokens[idx]
-        if tok.type == 'EBNFSymbol':
-            symbol = tok.contents
-            assert symbol, _err_msg(
-                'lord_have_mercy', rule, idx)
-            if sub_rule is not None:
-                assert symbol not in companion_complements(sub_rule), (
-                    _err_msg('improperly_nested', rule, symbol,
-                             group_companions[sub_rule]))
-
-            if symbol in group_companions:
-                moved, parser = make_parser(
-                    rule, parser_table, idx + 1,
-                    sub_rule=group_companions[symbol])
-                idx = moved
-                stack.append(parser)
-            # if we've hit the end of our sub_rule, apply it
-            # to our accumulated stack, return it to caller
-            elif symbol == sub_rule:
-                assert stack, (
-                    _err_msg('empty_grouping', rule, sub_rule))
-                if len(stack) == 1:
-                    return idx, stack[0]
-                return idx, Parser('arbitrary',
-                                   combinator_map[combinator_state](*stack),
-                                   dependencies)
-            # at this point, we've handled all the grouping logic
-            elif symbol == combinator_state:
-                # defer joining the parsers on the stack
-                # as late as possible (this reduces the number
-                # of functions significantly)
-                idx += 1
-            elif combinator_state is None:
-                combinator_state = symbol
-                idx += 1
-            elif symbol != combinator_state:
-                stack.append(Parser(
-                    'arbitrary',
-                    combinator_map[combinator_state](*stack),
-                    dependencies))
-                idx += 1
-                combinator_state = symbol
-            else:
-                assert False, "unreachable code. No context for you."
-        elif tok.type == 'terminal':
-            stack.append(
-                # need to rethink some data types.
-                make_matcher(tok.contents))
-        elif tok.type == 'identifier':
-            dependencies.add(tok.contents)
-            # problem here... mutual recursion fails this.
-            stack.append(parser_table[tok.contents])
-        else:
-            assert False, (
-                "unreachable code again. This is a nonzero amount of context")
-
-
-def _err_msg(err_name, *args):
+def err_msg(err_name, *args):
     return {
         'lord_have_mercy': lambda rule, idx: "\n".join((
             "Rule {} contains an empty symbol. This isn't your",
