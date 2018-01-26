@@ -1,3 +1,4 @@
+from collections import namedtuple
 import re
 
 
@@ -43,9 +44,38 @@ class Node:
             len(self.link) if self.link else 0)
 
 
-# this makes it so that all we need to report parse errors is the
-# index at which it occured.
+@memoize
+def what_is_linum_of_idx(program_string, absolute_idx):
+    line_map = build_idx_line_map(program_string)
+    if not line_map:
+        return Linum(1, absolute_idx)
+    line_num = _search(line_map, absolute_idx)
+    chars_consumed = line_map[line_num]
+    return Linum(1 + line_num, absolute_idx - chars_consumed)
+
+
+# mapping is implicit, the index of the match is the line number it is on.
 def build_idx_line_map(program_string):
     newline_reg = re.compile("\n")
-    # thank you tim sort
     return sorted(x.start() for x in newline_reg.finditer(program_string))
+
+
+Linum = namedtuple('Linum', ('line', 'relative_idx'))
+
+
+def _search(listing, absolute_idx):
+    """
+    Assuming the idx is in the string that generated the listing, find
+    the line that it was on.
+    """
+    if not listing:
+        return 0
+    if len(listing) == 1:
+        return 0 if absolute_idx <= listing[0] else 1
+
+    lower = 0
+    for idx, num in enumerate(listing):
+        if num < absolute_idx:
+            lower = num
+        if num >= absolute_idx:
+            return lower
