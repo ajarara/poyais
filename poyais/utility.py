@@ -50,7 +50,11 @@ def what_is_linum_of_idx(program_string, absolute_idx):
     if not line_map:
         return Linum(1, absolute_idx)
     line_num = _search(line_map, absolute_idx)
-    chars_consumed = line_map[line_num]
+    if line_num == 0:
+        chars_consumed = 0
+    else:
+        chars_consumed = line_map[line_num]
+    
     return Linum(1 + line_num, absolute_idx - chars_consumed)
 
 

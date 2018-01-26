@@ -107,3 +107,10 @@ Now the cases we must consider are when:
       * Combinator_state is unset, there's only one parser on the stack
       * Combinator\_state is set, there's more than one parser on the stack
     * grouping_start is unset
+
+# transformed results
+Optionals and identfiers needing out of band matches seems inevitable. We can use them at parse time for results and filter them out at the top level.
+
+Really we only need to filter out optionals. The identifiers we'd like to keep, because they are definitely useful for other stages of our compiler.
+
+In any case, any parser returns a Node whose value is either a success or another Node. The link is always a Node, if it's not none.
