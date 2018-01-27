@@ -14,7 +14,6 @@ LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
 
 
-
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
 # returning to caller.
@@ -30,12 +29,6 @@ UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
 # apply the parser until there is no more output. One of the issues is
 # nonzero repetition. How does EBNF handle a fixed number of rhs
 # elements? I guess that's just a bunch of ands.
-
-# I think the trick behind MetaII is just reification of the parser
-# into source code.  If this could be done then this'd be a way to
-# generate compiler front ends, for any target language, provided it
-# can be expressed in EBNF.
-
 
 def _make_tagged_matcher(match_type, tag, regex_string):
     # build the regex, then return a function that takes a string,
