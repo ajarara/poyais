@@ -22,14 +22,14 @@ def node_from_iterable(it):
     got = reversed(it)
     here = None
     for thing in got:
-        here = Node(thing, here)
+        here = LanguageNode(thing, here)
     return here
 
 
-class Node:
+class LanguageNode:
     def __init__(self, value, link=None):
         self.value = value
-        assert link is None or isinstance(link, Node)
+        assert link is None or isinstance(link, LanguageNode)
         self.link = link
 
     def __iter__(self):
@@ -40,7 +40,7 @@ class Node:
 
     # @memoize
     def __len__(self):
-        return len(self.value) + (
+        return len(self.value.match) + (
             len(self.link) if self.link else 0)
 
 

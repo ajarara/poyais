@@ -1,6 +1,6 @@
 from collections import namedtuple
 # from poyais.ebnf import ebnf_lexer
-from poyais.utility import Node, node_from_iterable
+from poyais.utility import LanguageNode, node_from_iterable
 import re
 
 
@@ -39,7 +39,7 @@ def _make_tagged_matcher(match_type, tag, regex_string):
     def parser(string, pos):
         maybe = reg.match(string, pos)
         if maybe:
-            return Node(match_type(tag, maybe.group()))
+            return LanguageNode(match_type(tag, maybe.group()))
     return parser
 
 
@@ -128,9 +128,23 @@ def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
     return companions.difference(group_companions(group_symbol))
 
 
-def make_parser_from_terminal(terminal, idx, state, _cache={}):
-    assert state['just_encountered_combinator'] or state['beginning']
-    
+def make_parser_from_terminal(rule, terminal, state, _cache={}):
+    if state['just_encountered_combinator']:
+        state['just_encountered_combinator'] = False
+    elif state['beginning']:
+        state['beginning'] = False
+    else:
+        errmsg('bad_terminal_placement', rule, terminal)
+
+    # this is the only time I can confidently cache a parser
+    if terminal not in _cache:
+        out = make_tagged_matcher('terminal', terminal)
+        _cache[terminal] = out
+        return out
+    else:
+        return _cache[terminal]
+
+
 
 def errmsg(err_name, *args):
     return {
