@@ -50,7 +50,7 @@ def test__search():
     assert _search([15], 14) == 0
     assert _search([15], 30) == 1
 
-    assert _search([1, 2, 3, 4], 3) == 1
+    assert _search([1, 2, 3, 4], 3) == 2
 
 
 def test_end_to_end_what_is_linum():
