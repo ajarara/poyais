@@ -1,5 +1,5 @@
 from collections import namedtuple
-# from poyais.ebnf import ebnf_lexer
+from poyais.ebnf import ebnf_lexer
 from poyais.utility import LanguageNode, node_from_iterable
 import re
 
@@ -111,6 +111,9 @@ EMPTY_PARSER = make_anonymous_matcher('Empty', '')
 COMBINATOR_MAP = {
     '|': or_parsers,
     ',': and_parsers,
+}
+
+GROUP_MAP = {
     '}': many_parser,
     ']': optional_parser,
     ')': group_parser
@@ -125,7 +128,7 @@ GROUP_COMPANIONS = {
 
 def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
                           companions=frozenset('}])')):
-    return companions.difference(group_companions(group_symbol))
+    return companions.difference(group_companions[group_symbol])
 
 
 def make_parser_from_terminal(rule, terminal, state, _cache={}):
@@ -134,7 +137,10 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
     elif state['beginning']:
         state['beginning'] = False
     else:
-        errmsg('bad_terminal_placement', rule, terminal)
+        # this smells bad. The alternative
+        # is putting these if checks in a conditional or
+        # and setting them after they pass but that is verbose af
+        assert False, errmsg('bad_terminal_placement', rule, terminal)
 
     # this is the only time I can confidently cache a parser
     if terminal not in _cache:
@@ -145,17 +151,54 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
-def start_grouping(rule, token_itr, group_type, state):
-    state['sub_rule'] = GROUP_COMPANIONS[group_type]
+def flatten_parsers(rule, stack, curr_combinator, state, sub_rule):
+    assert len(stack) <= 1 or curr_combinator, errmsg(
+        'TODO')
+
+
+def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
+             comb_map=COMBINATOR_MAP, group_map=GROUP_MAP,
+             group_comp=GROUP_COMPANIONS):
+    stack = []
+    curr_combinator = None
     while True:
         try:
-            dispatch(rule, token_itr, state)
+            got = next(token_itr)
         except StopIteration:
-            errmsg('unbounded_grouping', rule, state['sub_rule'])
+            return flatten_parsers(
+                rule, stack, curr_combinator, state, sub_rule)
+        if got.type == 'terminal':
+            stack.append(
+                make_parser_from_terminal(rule, got.contents, state))
+        elif got.type == 'EBNFSymbol':
+            # now we have to dispatch on contents
+            # this is the worst it'll get, I promise.
+            if got.contents in group_comp:
+                stack.append(
+                    dispatch(parser_table, rule, token_itr,
+                             state, grp_comp[got.contents]))
+            elif got.contents in group_map:
+                assert sub_rule, (
+                    errmsg('unexpected_grouping_op', rule, got.contents))
 
+                assert sub_rule not in companion_complements(got.contents), (
+                    errmsg('improperly_nested', rule, got.contents, sub_rule))
 
-def dispatch(*args):
-    pass
+                return flatten_parsers(
+                    rule, stack, curr_combinator, state, sub_rule)
+            elif got.contents in comb_map:
+                if curr_combinator is None:
+                    curr_combinator = got.contents
+                elif curr_combinator != got.contents:
+                    stack = comb_map[curr_combinator](*stack)
+                    curr_combinator = got.contents
+        elif got.type == 'identifier':
+            # this solves the identifiers being undefined problem
+            # but not our AST being keyed.
+            # on the other hand, this isn't the concern of our
+            # dispatcher, is it? since we can
+            stack.append(
+                lambda string, pos: parser_table[got.contents](string, pos))
 
 
 def errmsg(err_name, *args):
@@ -167,6 +210,10 @@ def errmsg(err_name, *args):
         'improperly_nested': lambda rule, got, expected: "\n".join((
             "Improperly nested grouping operator in rule {}:",
             "Got: {}, Expected: {}")).format(rule.lhs, got, expected),
+
+        'unexpected_grouping_op': lambda rule, got: "\n".join((
+            "Unexpected grouping operator '{}' in rule: {}")).format(
+                rule.lhs, got),
 
         'empty_grouping': lambda rule, sub_rule: "\n".join((
             "Rule {} contains an empty grouping ending with {}",)).format(
