@@ -145,16 +145,39 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
+def start_grouping(rule, token_itr, group_type, state):
+    state['sub_rule'] = GROUP_COMPANIONS[group_type]
+    while True:
+        try:
+            dispatch(rule, token_itr, state)
+        except StopIteration:
+            errmsg('unbounded_grouping', rule, state['sub_rule'])
+
+
+def dispatch(*args):
+    pass
+
 
 def errmsg(err_name, *args):
     return {
         'lord_have_mercy': lambda rule, idx: "\n".join((
             "Rule {} contains an empty symbol. This isn't your",
             "fault, it's mine. Unless you're me.")).format(rule.lhs, idx),
+
         'improperly_nested': lambda rule, got, expected: "\n".join((
             "Improperly nested grouping operator in rule {}:",
             "Got: {}, Expected: {}")).format(rule.lhs, got, expected),
+
         'empty_grouping': lambda rule, sub_rule: "\n".join((
-            "Rule {} contains an empty grouping ending with {}".format(
-                rule.lhs, sub_rule)))
+            "Rule {} contains an empty grouping ending with {}",)).format(
+                rule.lhs, sub_rule),
+
+        'unbounded_grouping': lambda rule, sub_rule: "\n".join((
+            "Rule {} missing {}",)).format(rule.lhs, sub_rule),
+
+        'bad_terminal_placement': lambda rule, terminal: "\n".join((
+            "Rule {} contains two terminals in a row with no combinator",
+            "separating them. Terminal triggering error: {}")).format(
+                rule.lhs, terminal),
+
         }[err_name](*args)
