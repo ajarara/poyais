@@ -150,7 +150,7 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
-def flatten_parser(rule, stack, curr_combinator, state, sub_rule):
+def flatten_parsers(rule, stack, curr_combinator, state, sub_rule):
     if curr_combinator:
         return COMBINATOR_MAP[curr_combinator](*stack)
     elif len(stack) == 1:
