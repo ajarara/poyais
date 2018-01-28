@@ -9,7 +9,6 @@ import re
 
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
-
 LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
 
@@ -132,15 +131,15 @@ def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
 
 
 def make_parser_from_terminal(rule, terminal, state, _cache={}):
-    if state['just_encountered_combinator']:
-        state['just_encountered_combinator'] = False
-    elif state['beginning']:
-        state['beginning'] = False
-    else:
-        # this smells bad. The alternative
-        # is putting these if checks in a conditional or
-        # and setting them after they pass but that is verbose af
-        assert False, errmsg('bad_terminal_placement', rule, terminal)
+    # if state['just_encountered_combinator']:
+    #     state['just_encountered_combinator'] = False
+    # elif state['beginning']:
+    #     state['beginning'] = False
+    # else:
+    #     # this smells bad. The alternative
+    #     # is putting these if checks in a conditional or
+    #     # and setting them after they pass but that is verbose af
+    #     assert False, errmsg('bad_terminal_placement', rule, terminal)
 
     # this is the only time I can confidently cache a parser
     if terminal not in _cache:
@@ -151,9 +150,13 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
-def flatten_parsers(rule, stack, curr_combinator, state, sub_rule):
-    assert len(stack) <= 1 or curr_combinator, errmsg(
-        'TODO')
+def flatten_parser(rule, stack, curr_combinator, state, sub_rule):
+    if curr_combinator:
+        return COMBINATOR_MAP[curr_combinator](*stack)
+    elif len(stack) == 1:
+        return stack[0]
+    else:
+        raise AssertionError('TODO')
 
 
 def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
@@ -165,6 +168,7 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
         try:
             got = next(token_itr)
         except StopIteration:
+            print("finished, ", stack)
             return flatten_parsers(
                 rule, stack, curr_combinator, state, sub_rule)
         if got.type == 'terminal':
@@ -176,7 +180,7 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
             if got.contents in group_comp:
                 stack.append(
                     dispatch(parser_table, rule, token_itr,
-                             state, grp_comp[got.contents]))
+                             state, group_comp[got.contents]))
             elif got.contents in group_map:
                 assert sub_rule, (
                     errmsg('unexpected_grouping_op', rule, got.contents))
@@ -190,15 +194,20 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
                 if curr_combinator is None:
                     curr_combinator = got.contents
                 elif curr_combinator != got.contents:
-                    stack = comb_map[curr_combinator](*stack)
+                    stack = [comb_map[curr_combinator](*stack)]
                     curr_combinator = got.contents
         elif got.type == 'identifier':
             # this solves the identifiers being undefined problem
             # but not our AST being keyed.
             # on the other hand, this isn't the concern of our
-            # dispatcher, is it? since we can
+            # dispatcher, is it? since we can have a one time map over
+            # identified parsers in the parser table that maps their
+            # results into a 'lifted' Node
             stack.append(
                 lambda string, pos: parser_table[got.contents](string, pos))
+
+def make_parser_from_rule(parser_table, rule):
+    return dispatch(parser_table, rule, iter(rule.tokens), {})
 
 
 def errmsg(err_name, *args):
