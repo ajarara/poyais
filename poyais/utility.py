@@ -1,4 +1,5 @@
 from collections import namedtuple
+import operator
 import re
 
 
@@ -26,6 +27,9 @@ def node_from_iterable(it):
     return here
 
 
+LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
+
+
 class LanguageNode:
     def __init__(self, value, link=None):
         self.value = value
@@ -38,10 +42,22 @@ class LanguageNode:
             yield here.value
             here = here.link
 
+    def reduce(self, fun, default, accumulate=operator.add):
+        if isinstance(self.value, LanguageNode):
+            here = fun(self.value)
+        elif isinstance(self.value, LanguageToken):
+            here = fun(self.value.match)
+        else:
+            raise AssertionError("sadness")
+        return accumulate(here, self.link.reduce(fun, default, accumulate)
+                          if self.link is not None else default)
+
     # @memoize
     def __len__(self):
-        return len(self.value.match) + (
-            len(self.link) if self.link else 0)
+        self.reduce(len, 0)
+
+    def __str__(self):
+        self.reduce(str, "", accumulate=operator.concat)
 
 
 @memoize

@@ -1,6 +1,7 @@
+from poyais.utility import (
+    LanguageNode, LanguageToken, node_from_iterable)
 from collections import namedtuple
 from poyais.ebnf import ebnf_lexer
-from poyais.utility import LanguageNode, node_from_iterable
 import re
 
 
@@ -9,9 +10,7 @@ import re
 
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
-LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
-
 
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
@@ -58,7 +57,7 @@ def and_parsers(*parsers):
         idx = pos
         for p in parsers:
             maybe = p(string, idx)
-            if maybe:
+            if maybe is not None:
                 out.append(maybe)
                 idx += len(maybe)
             else:
@@ -74,7 +73,7 @@ def or_parsers(*parsers):
     def parser(string, pos):
         for p in parsers:
             maybe = p(string, pos)
-            if maybe:
+            if maybe is not None:
                 return maybe
         else:
             return None
@@ -86,7 +85,7 @@ def many_parser(parser):
     def p(string, pos):
         out = []
         maybe = parser(string, pos)
-        while maybe:
+        while maybe is not None:
             out.append(maybe)
             maybe = parser(string, pos + len(maybe))
         return node_from_iterable(out)
@@ -205,6 +204,7 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
             # results into a 'lifted' Node
             stack.append(
                 lambda string, pos: parser_table[got.contents](string, pos))
+
 
 def make_parser_from_rule(parser_table, rule):
     return dispatch(parser_table, rule, iter(rule.tokens), {})

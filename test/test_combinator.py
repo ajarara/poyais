@@ -1,7 +1,8 @@
 from poyais.combinator import (
-    make_tagged_matcher, and_parsers, or_parsers, LanguageToken)
+    make_tagged_matcher, and_parsers, or_parsers
+)
 from hypothesis.strategies import text
-from poyais.ebnf import ebnf_lexer
+from utility import LanguageToken
 from hypothesis import given
 import string
 import pytest
@@ -16,7 +17,7 @@ def test_make_parser_returns_fun(literal_reg):
     assert tm.value.match == literal_reg
 
 
-@pytest.mark.skip(reason = "Outdated until we use Nodes")
+@pytest.mark.skip(reason = "Identified regression")
 @given(text(alphabet=string.ascii_letters),
        text(alphabet=string.ascii_letters))
 def test_and_parsers_joins_parsers(reg1, reg2):
@@ -25,6 +26,8 @@ def test_and_parsers_joins_parsers(reg1, reg2):
 
     combined = and_parsers(p1, p2)
     language_tokens = combined(reg1 + reg2, 0)
+    
+    
     assert isinstance(language_tokens[0], LanguageToken)
     assert language_tokens[0].tag == 'terminal'
     assert language_tokens[0].match == reg1
