@@ -1,6 +1,4 @@
 from collections import namedtuple
-from collections import deque
-from pdb import set_trace
 import operator
 import re
 
@@ -29,6 +27,8 @@ def node_from_iterable(it):
     return here
 
 
+# idx would be useful for compile errors.
+# but since this is a PoC, leave it for now.
 LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 
 
@@ -43,6 +43,18 @@ class LanguageNode:
         while here is not None:
             yield here.value
             here = here.link
+
+    def __str__(self):
+        return "".join(str(token.match) for token in iter_traverse(self))
+
+    def __len__(self):
+        got = iter_traverse(self)
+        if len(got) == 0:
+            return 0
+        if len(got) == 1:
+            return len(got[0].match)
+        else:
+            return operator.add(len(token.match) for token in got)
 
 
 def traverse(language_node):
@@ -73,7 +85,15 @@ def iter_traverse(language_node):
 
     return out
 
-@memoize
+
+def node_str(language_node):
+    return "".join(str(token.match) for token in iter_traverse(language_node))
+
+
+def node_len(language_node):
+    return operator.add(*iter_traverse(language_node))
+
+
 def what_is_linum_of_idx(program_string, absolute_idx):
     line_map = build_idx_line_map(program_string)
     if not line_map:
@@ -89,6 +109,7 @@ def what_is_linum_of_idx(program_string, absolute_idx):
 
 
 # mapping is implicit, the index of the match is the line number it is on.
+@memoize
 def build_idx_line_map(program_string):
     newline_reg = re.compile("\n")
     return sorted(x.start() for x in newline_reg.finditer(program_string))

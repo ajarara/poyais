@@ -20,7 +20,6 @@ def test_make_parser_returns_fun(literal_reg):
     assert tm.value.match == literal_reg
 
 
-@pytest.mark.skip(reason="Identified regression")
 @given(text(alphabet=string.ascii_letters),
        text(alphabet=string.ascii_letters))
 def test_and_parsers_joins_parsers(reg1, reg2):
@@ -29,8 +28,6 @@ def test_and_parsers_joins_parsers(reg1, reg2):
 
     combined = and_parsers(p1, p2)
     language_tokens = combined(reg1 + reg2, 0)
-    
-    
     assert isinstance(language_tokens[0], LanguageToken)
     assert language_tokens[0].tag == 'terminal'
     assert language_tokens[0].match == reg1
