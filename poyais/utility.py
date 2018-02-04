@@ -60,6 +60,19 @@ def traverse(language_node):
     return here + traverse(language_node.link)
 
 
+def iter_traverse(language_node):
+    """
+    Half way point between an iterative and a recursive solution
+    """
+    out = []
+    for element in language_node:
+        if isinstance(element, LanguageNode):
+            out.extend(iter_traverse(element))
+        elif isinstance(element, LanguageToken):
+            out.append(element)
+
+    return out
+
 @memoize
 def what_is_linum_of_idx(program_string, absolute_idx):
     line_map = build_idx_line_map(program_string)
