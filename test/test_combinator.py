@@ -2,7 +2,7 @@ from poyais.combinator import (
     make_tagged_matcher, and_parsers, or_parsers
 )
 from hypothesis.strategies import text
-from utility import LanguageToken
+from poyais.utility import LanguageToken
 from hypothesis import given
 import string
 import pytest
@@ -13,11 +13,14 @@ def test_make_parser_returns_fun(literal_reg):
     func = make_tagged_matcher('foo', literal_reg)
 
     tm = func(literal_reg, 0)
-    assert len(tm) == len(literal_reg)
+    assert tm is not None
+    assert tm.value is not None
+    assert tm.value.match is not None
+    assert tm.link is None
     assert tm.value.match == literal_reg
 
 
-@pytest.mark.skip(reason = "Identified regression")
+@pytest.mark.skip(reason="Identified regression")
 @given(text(alphabet=string.ascii_letters),
        text(alphabet=string.ascii_letters))
 def test_and_parsers_joins_parsers(reg1, reg2):

@@ -1,4 +1,6 @@
 from collections import namedtuple
+from collections import deque
+from pdb import set_trace
 import operator
 import re
 
@@ -42,22 +44,20 @@ class LanguageNode:
             yield here.value
             here = here.link
 
-    def reduce(self, fun, default, accumulate=operator.add):
-        if isinstance(self.value, LanguageNode):
-            here = fun(self.value)
-        elif isinstance(self.value, LanguageToken):
-            here = fun(self.value.match)
-        else:
-            raise AssertionError("sadness")
-        return accumulate(here, self.link.reduce(fun, default, accumulate)
-                          if self.link is not None else default)
 
-    # @memoize
-    def __len__(self):
-        self.reduce(len, 0)
+def traverse(language_node):
+    """
+    Depth first traversal of the language node, returning a mutable
+    list of only language tokens.
+    """
+    if language_node is None:
+        return []
+    if isinstance(language_node.value, LanguageNode):
+        here = traverse(language_node.value)
+    elif isinstance(language_node.value, LanguageToken):
+        here = [language_node.value]
 
-    def __str__(self):
-        self.reduce(str, "", accumulate=operator.concat)
+    return here + traverse(language_node.link)
 
 
 @memoize
