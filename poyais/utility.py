@@ -82,7 +82,6 @@ def iter_traverse(language_node):
             out.extend(iter_traverse(element))
         elif isinstance(element, LanguageToken):
             out.append(element)
-
     return out
 
 

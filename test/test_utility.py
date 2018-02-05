@@ -1,4 +1,6 @@
 from poyais.utility import (
+    iter_traverse, LanguageNode, LanguageToken,
+    node_from_iterable,
     memoize, build_idx_line_map, _search, what_is_linum_of_idx,
     Linum)
 from hypothesis.strategies import text
@@ -64,3 +66,37 @@ def test_end_to_end_what_is_linum():
 
     assert what_is_linum_of_idx(full, 0) == Linum(1, 0)
     assert what_is_linum_of_idx(full, 15) == Linum(2, 2)
+
+
+def test_node_from_iterable_empty():
+    assert node_from_iterable(()) is None
+
+
+def test_node_from_iterable():
+    matches = ('qux', 'quz', 'tmj')
+    got = make_language_token_node('terminal', matches)
+    here_idx = 0
+    while got is not None:
+        # this is pretty moot, we make it a language token
+        # in our helper method call.
+        assert isinstance(got.value, LanguageToken)
+        assert got.value.match == matches[here_idx]
+        here_idx += 1
+        got = got.link
+
+
+def test_iter_traverse():
+    matches = ('foo', 'bar')
+    ex = make_language_token_node('tag', matches)
+
+
+    got = iter_traverse(ex)
+    assert isinstance(got, list)
+    for idx, hopefully_token in enumerate(got):
+        assert isinstance(hopefully_token, LanguageToken)
+        assert hopefully_token.match == matches[idx]
+
+
+def make_language_token_node(tag, it):
+    return node_from_iterable(
+        tuple(LanguageToken(tag, match) for match in it))
