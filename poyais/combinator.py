@@ -144,7 +144,7 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
-def flatten_parsers(rule, stack, curr_combinator, state, sub_rule):
+def flatten_parsers(rule, stack, curr_combinator, state):
     if curr_combinator:
         return COMBINATOR_MAP[curr_combinator](*stack)
     elif len(stack) == 1:
@@ -164,7 +164,7 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
         except StopIteration:
             print("finished, {}: {}".format(curr_combinator, stack))
             return flatten_parsers(
-                rule, stack, curr_combinator, state, sub_rule)
+                rule, stack, curr_combinator, state)
         if got.type == 'terminal':
             stack.append(
                 make_parser_from_terminal(rule, got.contents, state))
