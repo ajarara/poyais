@@ -114,13 +114,13 @@ def test_and_or_or_comb():
 
 
 # now for the hard stuff
-# @given(lists(elements=sampled_from((" ", r"\t", r"\t")), min_size=1))
-# def test_non_dependent_rule(ls):
-#     s = ''.join(ls)
-#     ex = tuple(ebnf_lexer(r'whitespace = "\n" | "\t" | " ";'))[0]
-#     d = {}
-#     parser = make_parser_from_rule(d, ex)
-#     assert parser(s, 0) is not None
+@given(lists(elements=WHITESPACE_STRAT, min_size=1))
+def test_non_dependent_rule(ls):
+    s = ''.join(ls)
+    ex = tuple(ebnf_lexer(r'whitespace = "\n" | "\t" | " ";'))[0]
+    d = {}
+    parser = make_parser_from_rule(d, ex)
+    assert parser(s, 0) is not None
 
 
 def concat_tm_matches(tms):
