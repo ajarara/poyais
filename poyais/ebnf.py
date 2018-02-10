@@ -70,7 +70,8 @@ EBNFSymbol = "EBNFSymbol"  # associated with kind
 EBNFToken = namedtuple('EBNFToken', ['type', 'contents'])
 
 EBNFSYMBOLS = frozenset('{[(|,)]}')
-QUOTES = frozenset("'\"")
+QUOTES_STR = "'\""
+QUOTES = frozenset(QUOTES_STR)
 
 
 def lex_rule(rule, symbols=EBNFSYMBOLS, quotes=QUOTES):
@@ -82,8 +83,7 @@ def lex_rule(rule, symbols=EBNFSYMBOLS, quotes=QUOTES):
             got.append(char)
             if char == quoted:
                 quoted = False
-                # verbatim, don't strip
-                yield EBNFToken('terminal', ''.join(got))
+                yield EBNFToken('terminal', ''.join(got).strip(QUOTES_STR))
                 got = []
         elif char in quotes:
             quoted = char
