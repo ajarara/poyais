@@ -1,11 +1,12 @@
 from poyais.combinator import (
-    make_tagged_matcher, and_parsers, or_parsers
+    make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule
 )
-from hypothesis.strategies import text
+from hypothesis.strategies import text, lists, sampled_from
 from poyais.utility import LanguageToken
+from poyais.ebnf import ebnf_lexer
 from hypothesis import given
 import string
-import pytest
+# import pytest
 
 
 @given(text(alphabet=string.ascii_letters))
@@ -55,6 +56,19 @@ def test_or_parsers_acts_as_either(reg1, reg2):
     assert reg2.startswith(tm2.match)
 
 
+WHITESPACE = (" ", "\t", "\n")
+
+WHITESPACE_STRAT = sampled_from(WHITESPACE)
+
+
+@given(lists(elements=WHITESPACE_STRAT, min_size=1))
+def test_or_parser_acts_as_either_whitespace(ls):
+    parsers = tuple(make_tagged_matcher('whitespace', tok) for tok in ls)
+    p = or_parsers(*parsers)
+    for space in ls:
+        assert p(space, 0) is not None
+
+
 def test_or_and_and_comb():
     # at this point I'm thinking it's probably a good idea
     # to write an anonymous parser. that'll make testing these
@@ -90,6 +104,16 @@ def test_and_or_or_comb():
     for yummy in ('peachcobbler', 'broccolicobbler',
                   'peaches', 'broccolies'):
         assert concat_tm_matches(yums(yummy, 0)) == yummy
+
+
+# now for the hard stuff
+# @given(lists(elements=sampled_from((" ", r"\t", r"\t")), min_size=1))
+# def test_non_dependent_rule(ls):
+#     s = ''.join(ls)
+#     ex = tuple(ebnf_lexer(r'whitespace = "\n" | "\t" | " ";'))[0]
+#     d = {}
+#     parser = make_parser_from_rule(d, ex)
+#     assert parser(s, 0) is not None
 
 
 def concat_tm_matches(tms):

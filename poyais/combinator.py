@@ -101,9 +101,7 @@ def many_parser(parser):
 
 # parser -> parser
 def optional_parser(parser):
-    return or_parsers(
-        parser,
-        EMPTY_PARSER)
+    return or_parsers(parser, EMPTY_PARSER)
 
 
 # parser -> parser
@@ -164,7 +162,7 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
         try:
             got = next(token_itr)
         except StopIteration:
-            print("finished, ", stack)
+            print("finished, {}: {}".format(curr_combinator, stack))
             return flatten_parsers(
                 rule, stack, curr_combinator, state, sub_rule)
         if got.type == 'terminal':
