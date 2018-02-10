@@ -99,8 +99,7 @@ def test_traverse():
 def test_traverse_on_AST():
     # we want depth first
     matches = (('+',), '5', '6')
-    for match in matches:
-        pass
+    make_ast_from_iterable('bar', matches)
 
 
 def test_make_ast_from_iterable():
@@ -108,7 +107,7 @@ def test_make_ast_from_iterable():
     assert isinstance(got.value, LanguageNode)
     # just deeply check
     assert got.value.value.match == 'lambda'
-    assert got.value.link.value.match == '+'  # :disappointed:
+    assert got.value.link.value.match == '+'
     assert got.link.value.match == '5'
     assert got.link.link.value.match == '3'
 
@@ -126,7 +125,8 @@ def make_ast_from_iterable(tag, tokens, idx=0):
     if idx < len(tokens):
         curr = tokens[idx]
         # some implicit behavior here, if there's an empty
-        # tuple it'll consider that None
+        # tuple it'll consider that None, wrapping it
+        # in a LanguageNode
         if isinstance(curr, tuple):
             # recurse into curr
             return LanguageNode(

@@ -1,7 +1,7 @@
 from poyais.utility import (
-    LanguageNode, LanguageToken, node_from_iterable)
+    LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx)
 from collections import namedtuple
-from poyais.ebnf import ebnf_lexer
+# from poyais.ebnf import ebnf_lexer
 import re
 
 
@@ -37,7 +37,7 @@ def _make_tagged_matcher(match_type, tag, regex_string):
     def parser(string, pos):
         maybe = reg.match(string, pos)
         if maybe:
-            return LanguageNode(match_type(tag, maybe.group()))
+            return match_type(tag, maybe.group())
     return parser
 
 
@@ -59,7 +59,14 @@ def and_parsers(*parsers):
             maybe = p(string, idx)
             if maybe is not None:
                 out.append(maybe)
-                idx += len(maybe)
+                if isinstance(maybe, LanguageToken):
+                    idx += len(maybe.match)
+                elif isinstance(maybe, LanguageNode):
+                    idx += len(maybe)
+                else:
+                    # runtime exception
+                    raise AssertionError(
+                        errmsg('unknown_node', string, idx, maybe))
             else:
                 # one of the parsers failed. Stop parsing,
                 # fail the whole parser.
@@ -130,16 +137,6 @@ def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
 
 
 def make_parser_from_terminal(rule, terminal, state, _cache={}):
-    # if state['just_encountered_combinator']:
-    #     state['just_encountered_combinator'] = False
-    # elif state['beginning']:
-    #     state['beginning'] = False
-    # else:
-    #     # this smells bad. The alternative
-    #     # is putting these if checks in a conditional or
-    #     # and setting them after they pass but that is verbose af
-    #     assert False, errmsg('bad_terminal_placement', rule, terminal)
-
     # this is the only time I can confidently cache a parser
     if terminal not in _cache:
         out = make_tagged_matcher('terminal', terminal)
@@ -235,5 +232,9 @@ def errmsg(err_name, *args):
             "Rule {} contains two terminals in a row with no combinator",
             "separating them. Terminal triggering error: {}")).format(
                 rule.lhs, terminal),
+
+        'unknown_node': lambda program_string, idx, match: "\n".join((
+            "Encountered unknown match: {} while parsing ({}, {})")).format(
+                match, what_is_linum_of_idx(program_string, idx), idx)
 
         }[err_name](*args)

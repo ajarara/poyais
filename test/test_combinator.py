@@ -9,18 +9,14 @@ import pytest
 
 
 @given(text(alphabet=string.ascii_letters))
-def test_make_parser_returns_fun(literal_reg):
+def test_make_parser_returns_fun_returns_match(literal_reg):
     func = make_tagged_matcher('foo', literal_reg)
 
     tm = func(literal_reg, 0)
-    assert tm is not None
-    assert tm.value is not None
-    assert tm.value.match is not None
-    assert tm.link is None
-    assert tm.value.match == literal_reg
+    assert isinstance(tm, LanguageToken)
+    assert tm.match == literal_reg
 
 
-@pytest.mark.skip(reason="testing utility first")
 @given(text(alphabet=string.ascii_letters),
        text(alphabet=string.ascii_letters))
 def test_and_parsers_joins_parsers(reg1, reg2):
@@ -29,15 +25,19 @@ def test_and_parsers_joins_parsers(reg1, reg2):
 
     combined = and_parsers(p1, p2)
     language_tokens = combined(reg1 + reg2, 0)
-    assert isinstance(language_tokens[0], LanguageToken)
-    assert language_tokens[0].tag == 'terminal'
-    assert language_tokens[0].match == reg1
 
-    assert language_tokens[1].tag == 'terminal'
-    assert language_tokens[1].match == reg2
+    assert isinstance(language_tokens.value, LanguageToken)
+    tok = language_tokens.value
+
+    assert tok.tag == 'foo'
+    assert tok.match == reg1
+
+    next_tok = language_tokens.link.value
+
+    assert next_tok.tag == 'bar'
+    assert next_tok.match == reg2
 
 
-@pytest.mark.skip(reason="Outdated until we use Nodes")
 @given(text(alphabet=string.ascii_letters),
        text(alphabet=string.ascii_letters))
 def test_or_parsers_acts_as_either(reg1, reg2):
@@ -46,15 +46,15 @@ def test_or_parsers_acts_as_either(reg1, reg2):
 
     func = or_parsers(p1, p2)
     tm1 = func(reg1, 0)
-    assert len(tm1) == 1
-    assert reg1.startswith(tm1[0].match)
+    # I think the fact that we have to check only startswith makes it
+    # clear that if we've got an 'or' of parsers that aren't mutually
+    # exclusive we won't try the second one if the first one succeeds.
+    assert reg1.startswith(tm1.match)
 
     tm2 = func(reg2, 0)
-    assert len(tm2) == 1
-    assert reg2.startswith(tm2[0].match)
+    assert reg2.startswith(tm2.match)
 
 
-@pytest.mark.skip(reason="Outdated until we use Nodes")
 def test_or_and_and_comb():
     # at this point I'm thinking it's probably a good idea
     # to write an anonymous parser. that'll make testing these
@@ -76,7 +76,6 @@ def test_or_and_and_comb():
     assert concat_tm_matches(anypie('applepie', 0)) == 'applepie'
 
 
-@pytest.mark.skip(reason="Outdated until we use Nodes")
 def test_and_or_or_comb():
     p1 = make_tagged_matcher('base', 'peach')
     p2 = make_tagged_matcher('avant_garde', 'broccoli')
