@@ -69,6 +69,13 @@ def test_or_parser_acts_as_either_whitespace(ls):
         assert p(space, 0) is not None
 
 
+@given(lists(elements=WHITESPACE_STRAT, min_size=1))
+def test_and_parser_needs_all_whitespace(ls):
+    p = and_parsers(
+        *tuple(make_tagged_matcher('whitespace', tok) for tok in ls))
+    assert p(''.join(ls), 0) is not None
+
+
 def test_or_and_and_comb():
     # at this point I'm thinking it's probably a good idea
     # to write an anonymous parser. that'll make testing these
