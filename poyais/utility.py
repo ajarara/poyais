@@ -56,8 +56,16 @@ class LanguageNode:
         else:
             return operator.add(len(token.match) for token in got)
 
+    def __repr__(self):
+        return "LanguageNode({}{})".format(
+            self.value, ', ...' if self.link is not None else '')
+
 
 def traverse(language_node):
+    return iter_traverse(language_node)
+
+
+def recursive_traverse(language_node):
     """
     Depth first traversal of the language node, returning a mutable
     list of only language tokens.

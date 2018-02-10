@@ -1,5 +1,5 @@
 from poyais.utility import (
-    iter_traverse, LanguageNode, LanguageToken,
+    traverse, LanguageNode, LanguageToken,
     node_from_iterable,
     memoize, build_idx_line_map, _search, what_is_linum_of_idx,
     Linum)
@@ -85,16 +85,57 @@ def test_node_from_iterable():
         got = got.link
 
 
-def test_iter_traverse():
+def test_traverse():
     matches = ('foo', 'bar')
     ex = make_language_token_node('tag', matches)
 
-
-    got = iter_traverse(ex)
+    got = traverse(ex)
     assert isinstance(got, list)
     for idx, hopefully_token in enumerate(got):
         assert isinstance(hopefully_token, LanguageToken)
         assert hopefully_token.match == matches[idx]
+
+
+def test_traverse_on_AST():
+    # we want depth first
+    matches = (('+',), '5', '6')
+    for match in matches:
+        pass
+
+
+def test_make_ast_from_iterable():
+    got = make_ast_from_iterable('foo', (('lambda', '+'), '5', '3'))
+    assert isinstance(got.value, LanguageNode)
+    # just deeply check
+    assert got.value.value.match == 'lambda'
+    assert got.value.link.value.match == '+'  # :disappointed:
+    assert got.link.value.match == '5'
+    assert got.link.link.value.match == '3'
+
+
+def test_make_ast_nested_empty():
+    got = make_ast_from_iterable('bar', ('hey', ((),), 'moooooon'))
+    assert got.value.match == 'hey'
+    assert got.link.value.value is None
+    assert got.link.value.link is None
+    assert got.link.link.value.match == 'moooooon'
+    assert got.link.link.link is None
+
+
+def make_ast_from_iterable(tag, tokens, idx=0):
+    if idx < len(tokens):
+        curr = tokens[idx]
+        # some implicit behavior here, if there's an empty
+        # tuple it'll consider that None
+        if isinstance(curr, tuple):
+            # recurse into curr
+            return LanguageNode(
+                make_ast_from_iterable(tag, curr, 0),
+                make_ast_from_iterable(tag, tokens, idx + 1))
+        elif isinstance(curr, str):
+            return LanguageNode(
+                LanguageToken(tag, curr),
+                make_ast_from_iterable(tag, tokens, idx + 1))
 
 
 def make_language_token_node(tag, it):
