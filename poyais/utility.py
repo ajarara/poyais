@@ -94,11 +94,11 @@ def iter_traverse(language_node):
 
 
 def node_str(language_node):
-    return "".join(str(token.match) for token in iter_traverse(language_node))
+    return "".join(str(token.match) for token in traverse(language_node))
 
 
 def node_len(language_node):
-    return operator.add(*iter_traverse(language_node))
+    return operator.add(len(token.match) for token in traverse(language_node))
 
 
 def what_is_linum_of_idx(program_string, absolute_idx):
