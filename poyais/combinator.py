@@ -106,7 +106,7 @@ def group_parser(parser):
     return parser
 
 
-EMPTY_PARSER = make_anonymous_matcher('Empty', '')
+EMPTY_PARSER = make_anonymous_matcher('empty', '')
 
 COMBINATOR_MAP = {
     '|': or_parsers,
@@ -161,7 +161,6 @@ def dispatch(parser_table, rule, token_itr, sub_rule=None,
         try:
             got = next(token_itr)
         except StopIteration:
-            print("finished, {}: {}".format(curr_combinator, stack))
             return flatten_parsers(
                 rule, stack, curr_combinator)
         if got.type == 'terminal':
