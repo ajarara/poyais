@@ -175,8 +175,9 @@ def dispatch(parser_table, rule, token_itr, sub_rule=None,
                     dispatch(parser_table, rule, token_itr,
                              group_comp[contents]))
             elif contents == sub_rule:
-                return flatten_parsers(
+                flattened = flatten_parsers(
                     rule, stack, curr_combinator)
+                return group_map[sub_rule](flattened)
             elif contents in comb_map:
                 if curr_combinator is None:
                     curr_combinator = contents

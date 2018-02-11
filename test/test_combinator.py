@@ -1,6 +1,6 @@
 from poyais.combinator import (
     make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule,
-    make_parser_table, many_parser, UtilityToken, EMPTY_PARSER
+    make_parser_table, many_parser, UtilityToken, EMPTY_PARSER, optional_parser
 )
 from hypothesis.strategies import text, lists, sampled_from
 from poyais.ebnf import LexedRule, Rule, lex_rule
@@ -88,7 +88,8 @@ def test_or_parser_acts_as_either_whitespace(ls):
 def test_and_parser_needs_all_whitespace(ls):
     p = and_parsers(
         *tuple(make_tagged_matcher('whitespace', tok) for tok in ls))
-    assert p(''.join(ls), 0) is not None
+    got = p(''.join(ls), 0)
+    assert got is not None
 
 
 def test_or_and_and_comb():
