@@ -145,6 +145,23 @@ def test_empty_parser(s):
         assert got.match == ''
 
 
+@given(text(alphabet=string.ascii_letters + string.digits))
+def test_optional_parser(s):
+    tag = 'arbitrary'
+    optional_p = optional_parser(
+        make_tagged_matcher(tag, s))
+    got = optional_p(s, 0)
+    assert isinstance(got, LanguageToken)
+    assert got.tag == tag
+    assert got.match == s
+
+    if s != '':
+        empty_got = optional_p('', 0)
+        assert isinstance(empty_got, UtilityToken)
+        assert empty_got.tag == 'empty'
+        assert empty_got.match == ''
+
+
 # now for the hard stuff
 @given(lists(elements=WHITESPACE_STRAT, min_size=1))
 def test_non_dependent_rule(ls):
