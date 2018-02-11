@@ -129,10 +129,6 @@ GROUP_COMPANIONS = {
 }
 
 
-def companion_complements(group_ending_symbol, companions=frozenset('}])')):
-    return companions.difference(group_ending_symbol)
-
-
 def make_parser_from_terminal(rule, terminal, state, _cache={}):
     # this is the only time I can confidently cache a parser
     if terminal not in _cache:
