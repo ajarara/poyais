@@ -1,7 +1,7 @@
 from poyais.utility import (
     LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx)
 from collections import namedtuple
-# from poyais.ebnf import ebnf_lexer
+from poyais.ebnf import ebnf_lexer
 import re
 
 
@@ -129,9 +129,8 @@ GROUP_COMPANIONS = {
 }
 
 
-def companion_complements(group_symbol, group_companions=GROUP_COMPANIONS,
-                          companions=frozenset('}])')):
-    return companions.difference(group_companions[group_symbol])
+def companion_complements(group_ending_symbol, companions=frozenset('}])')):
+    return companions.difference(group_ending_symbol)
 
 
 def make_parser_from_terminal(rule, terminal, state, _cache={}):
@@ -171,25 +170,23 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
         elif got.type == 'EBNFSymbol':
             # now we have to dispatch on contents
             # this is the worst it'll get, I promise.
-            if got.contents in group_comp:
+            contents = got.contents
+            if contents in group_comp:
                 stack.append(
                     dispatch(parser_table, rule, token_itr,
-                             state, group_comp[got.contents]))
-            elif got.contents in group_map:
-                assert sub_rule, (
-                    errmsg('unexpected_grouping_op', rule, got.contents))
-
-                assert sub_rule not in companion_complements(got.contents), (
-                    errmsg('improperly_nested', rule, got.contents, sub_rule))
-
+                             state, group_comp[contents]))
+            elif contents == sub_rule:
                 return flatten_parsers(
-                    rule, stack, curr_combinator, state, sub_rule)
-            elif got.contents in comb_map:
+                    rule, stack, curr_combinator, state)
+            elif contents in comb_map:
                 if curr_combinator is None:
-                    curr_combinator = got.contents
-                elif curr_combinator != got.contents:
+                    curr_combinator = contents
+                elif curr_combinator != contents:
                     stack = [comb_map[curr_combinator](*stack)]
-                    curr_combinator = got.contents
+                    curr_combinator = contents
+            else:
+                raise AssertionError(
+                    errmsg('improperly_nested', rule, contents, sub_rule))
         elif got.type == 'identifier':
             # this solves the identifiers being undefined problem
             # but not our AST being keyed.
@@ -203,6 +200,13 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
 
 def make_parser_from_rule(parser_table, rule):
     return dispatch(parser_table, rule, iter(rule.tokens), {})
+
+
+def make_parser_table(ebnf_string):
+    out = {}
+    for lexed_rule in ebnf_lexer(ebnf_string):
+        out[lexed_rule.identifier] = make_parser_from_rule(out, lexed_rule)
+    return out
 
 
 def errmsg(err_name, *args):

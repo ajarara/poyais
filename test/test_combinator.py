@@ -2,8 +2,8 @@ from poyais.combinator import (
     make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule
 )
 from hypothesis.strategies import text, lists, sampled_from
+from poyais.ebnf import LexedRule, Rule, lex_rule
 from poyais.utility import LanguageToken
-from poyais.ebnf import ebnf_lexer
 from hypothesis import given
 import string
 # import pytest
@@ -113,15 +113,25 @@ def test_and_or_or_comb():
         assert concat_tm_matches(yums(yummy, 0)) == yummy
 
 
+def test_non_dependent_grouped_rule():
+    rule = make_lexed_rule('groupd', '( "this", " and ", "that") | "neither"')
+    parser = make_parser_from_rule({}, rule)
+    assert parser("this and that", 0) is not None
+    assert parser("neither", 0) is not None
+
+
 # now for the hard stuff
 @given(lists(elements=WHITESPACE_STRAT, min_size=1))
 def test_non_dependent_rule(ls):
     s = ''.join(ls)
-    ex = tuple(ebnf_lexer(r'whitespace = "\n" | "\t" | " ";'))[0]
-    d = {}
-    parser = make_parser_from_rule(d, ex)
+    rule = make_lexed_rule('whitespace', r'"\n" | "\t" | " "')
+    parser = make_parser_from_rule({}, rule)
     assert parser(s, 0) is not None
 
 
 def concat_tm_matches(tms):
     return ''.join(x.match for x in tms)
+
+
+def make_lexed_rule(identifier, rule_as_string):
+    return LexedRule(identifier, lex_rule(Rule(identifier, rule_as_string)))
