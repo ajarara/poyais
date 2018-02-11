@@ -61,6 +61,15 @@ class LanguageNode:
             self.value, ', ...' if self.link is not None else '')
 
 
+def len_of_token_or_node(language_obj):
+    if isinstance(language_obj, LanguageToken):
+        return len(language_obj.match)
+    elif isinstance(language_obj, LanguageNode):
+        return len(language_obj)
+    else:
+        raise AssertionError('Unsupported obj passed to len_of_token_or_node!')
+
+
 def traverse(language_node):
     return iter_traverse(language_node)
 

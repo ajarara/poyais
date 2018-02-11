@@ -1,5 +1,6 @@
 from poyais.utility import (
-    LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx)
+    LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx,
+    len_of_token_or_node,)
 from collections import namedtuple
 from poyais.ebnf import ebnf_lexer
 import re
@@ -56,14 +57,7 @@ def and_parsers(*parsers):
             maybe = p(string, idx)
             if maybe is not None:
                 out.append(maybe)
-                if isinstance(maybe, LanguageToken):
-                    idx += len(maybe.match)
-                elif isinstance(maybe, LanguageNode):
-                    idx += len(maybe)
-                else:
-                    # runtime exception
-                    raise AssertionError(
-                        errmsg('unknown_node', string, idx, maybe))
+                idx += len_of_token_or_node(maybe)
             else:
                 # one of the parsers failed. Stop parsing,
                 # fail the whole parser.
@@ -88,10 +82,12 @@ def or_parsers(*parsers):
 def many_parser(parser):
     def p(string, pos):
         out = []
+        idx = pos
         maybe = parser(string, pos)
         while maybe is not None:
             out.append(maybe)
-            maybe = parser(string, pos + len(maybe))
+            idx += len_of_token_or_node(maybe)
+            maybe = parser(string, idx)
         return node_from_iterable(out)
     return optional_parser(p)
 

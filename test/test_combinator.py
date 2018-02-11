@@ -61,7 +61,6 @@ def test_or_parsers_acts_as_either(reg1, reg2):
 
 
 # don't.. don't feed many_parser the empty parser.
-@pytest.mark.skip("sadness")
 @given(text(alphabet=string.ascii_letters, min_size=1))
 def test_many_parser(word):
     # why is there an infinite loop here when hypothesis tests but
