@@ -3,7 +3,7 @@ from poyais.combinator import (
 )
 from hypothesis.strategies import text, lists, sampled_from
 from poyais.ebnf import LexedRule, Rule, lex_rule
-from poyais.utility import LanguageToken
+from poyais.utility import LanguageToken, LanguageNode
 from hypothesis import given
 import string
 # import pytest
@@ -134,8 +134,6 @@ def test_simple_optional_rule():
     got = parser("optionally: here", 0)
     assert got is not None
     assert isinstance(got, LanguageNode)
-    assert got.value == LanguageToken(
-
 
 
 def concat_tm_matches(tms):
