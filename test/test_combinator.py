@@ -129,9 +129,24 @@ def test_non_dependent_rule(ls):
     assert parser(s, 0) is not None
 
 
+def test_simple_optional_rule():
+    parser = make_parser_from_rule_string(r'["optionally: "], "here"')
+    got = parser("optionally: here", 0)
+    assert got is not None
+    assert isinstance(got, LanguageNode)
+    assert got.value == LanguageToken(
+
+
+
 def concat_tm_matches(tms):
     return ''.join(x.match for x in tms)
 
 
 def make_lexed_rule(identifier, rule_as_string):
     return LexedRule(identifier, lex_rule(Rule(identifier, rule_as_string)))
+
+ARBITRARY_TAG = 'arbitrary'
+
+def make_parser_from_rule_string(rule_string, tag=ARBITRARY_TAG):
+    rule = make_lexed_rule(tag, rule_string)
+    return make_parser_from_rule({}, rule)
