@@ -148,6 +148,12 @@ def flatten_parsers(rule, stack, curr_combinator):
         raise AssertionError('TODO')
 
 
+def delay_and_raise(parser_table, identifier):
+    def parser(string, pos):
+        return LanguageNode(parser_table[identifier](string, pos))
+    return parser
+
+
 def dispatch(parser_table, rule, token_itr, sub_rule=None,
              comb_map=COMBINATOR_MAP, group_map=GROUP_MAP,
              group_comp=GROUP_COMPANIONS):
@@ -184,14 +190,7 @@ def dispatch(parser_table, rule, token_itr, sub_rule=None,
                 raise AssertionError(
                     errmsg('improperly_nested', rule, contents, sub_rule))
         elif got.type == 'identifier':
-            # this solves the identifiers being undefined problem
-            # but not our AST being keyed.
-            # on the other hand, this isn't the concern of our
-            # dispatcher, is it? since we can have a one time map over
-            # identified parsers in the parser table that maps their
-            # results into a 'lifted' Node
-            stack.append(
-                lambda string, pos: parser_table[got.contents](string, pos))
+            stack.append(delay_and_raise(parser_table, got.contents))
 
 
 def make_parser_from_rule(parser_table, rule):
