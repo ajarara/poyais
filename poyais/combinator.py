@@ -129,7 +129,7 @@ GROUP_COMPANIONS = {
 }
 
 
-def make_parser_from_terminal(rule, terminal, state, _cache={}):
+def make_parser_from_terminal(rule, terminal, _cache={}):
     # this is the only time I can confidently cache a parser
     if terminal not in _cache:
         out = make_tagged_matcher('terminal', terminal)
@@ -139,7 +139,7 @@ def make_parser_from_terminal(rule, terminal, state, _cache={}):
         return _cache[terminal]
 
 
-def flatten_parsers(rule, stack, curr_combinator, state):
+def flatten_parsers(rule, stack, curr_combinator):
     if curr_combinator:
         return COMBINATOR_MAP[curr_combinator](*stack)
     elif len(stack) == 1:
@@ -148,7 +148,7 @@ def flatten_parsers(rule, stack, curr_combinator, state):
         raise AssertionError('TODO')
 
 
-def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
+def dispatch(parser_table, rule, token_itr, sub_rule=None,
              comb_map=COMBINATOR_MAP, group_map=GROUP_MAP,
              group_comp=GROUP_COMPANIONS):
     stack = []
@@ -159,10 +159,10 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
         except StopIteration:
             print("finished, {}: {}".format(curr_combinator, stack))
             return flatten_parsers(
-                rule, stack, curr_combinator, state)
+                rule, stack, curr_combinator)
         if got.type == 'terminal':
             stack.append(
-                make_parser_from_terminal(rule, got.contents, state))
+                make_parser_from_terminal(rule, got.contents))
         elif got.type == 'EBNFSymbol':
             # now we have to dispatch on contents
             # this is the worst it'll get, I promise.
@@ -170,10 +170,10 @@ def dispatch(parser_table, rule, token_itr, state, sub_rule=None,
             if contents in group_comp:
                 stack.append(
                     dispatch(parser_table, rule, token_itr,
-                             state, group_comp[contents]))
+                             group_comp[contents]))
             elif contents == sub_rule:
                 return flatten_parsers(
-                    rule, stack, curr_combinator, state)
+                    rule, stack, curr_combinator)
             elif contents in comb_map:
                 if curr_combinator is None:
                     curr_combinator = contents
