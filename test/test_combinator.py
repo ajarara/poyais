@@ -198,11 +198,13 @@ def test_make_parser_table():
     rules = "this = 't' | 'h' | 'i' | 's';"
     table = make_parser_table(rules)
     assert 'this' in table
-    assert table['this']('t', 0)
-    assert table['this']('h', 0)
-    assert table['this']('i', 0)
-    assert table['this']('s', 0)
-    assert table['this']('w', 0) is None
+    this_p = table['this']
+    
+    assert this_p('t', 0)
+    assert this_p('h', 0)
+    assert this_p('i', 0)
+    assert this_p('s', 0)
+    assert this_p('w', 0) is None
 
 
 def concat_tm_matches(tms):
