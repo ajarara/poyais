@@ -1,5 +1,6 @@
 from poyais.combinator import (
-    make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule
+    make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule,
+    make_parser_table
 )
 from hypothesis.strategies import text, lists, sampled_from
 from poyais.ebnf import LexedRule, Rule, lex_rule
@@ -124,16 +125,27 @@ def test_non_dependent_grouped_rule():
 @given(lists(elements=WHITESPACE_STRAT, min_size=1))
 def test_non_dependent_rule(ls):
     s = ''.join(ls)
-    rule = make_lexed_rule('whitespace', r'"\n" | "\t" | " "')
+    rule = make_lexed_rule('whitespace', '"\n" | "\t" | " "')
     parser = make_parser_from_rule({}, rule)
     assert parser(s, 0) is not None
 
 
 def test_simple_optional_rule():
-    parser = make_parser_from_rule_string(r'["optionally: "], "here"')
+    parser = make_parser_from_rule_string('["optionally: "], "here"')
     got = parser("optionally: here", 0)
     assert got is not None
     assert isinstance(got, LanguageNode)
+
+
+def test_make_parser_table():
+    rules = "this = 't' | 'h' | 'i' | 's';"
+    table = make_parser_table(rules)
+    assert 'this' in table
+    assert table['this']('t', 0)
+    assert table['this']('h', 0)
+    assert table['this']('i', 0)
+    assert table['this']('s', 0)
+    assert table['this']('w', 0) is None
 
 
 def concat_tm_matches(tms):
@@ -143,7 +155,9 @@ def concat_tm_matches(tms):
 def make_lexed_rule(identifier, rule_as_string):
     return LexedRule(identifier, lex_rule(Rule(identifier, rule_as_string)))
 
+
 ARBITRARY_TAG = 'arbitrary'
+
 
 def make_parser_from_rule_string(rule_string, tag=ARBITRARY_TAG):
     rule = make_lexed_rule(tag, rule_string)

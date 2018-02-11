@@ -32,12 +32,9 @@ def _make_tagged_matcher(match_type, tag, regex_string):
     # build the regex, then return a function that takes a string,
     # applies the reg to the string, if it succeeds
     # return a tagged match with the tag and the string that matched.
-    reg = re.compile(regex_string)
-
     def parser(string, pos):
-        maybe = reg.match(string, pos)
-        if maybe:
-            return match_type(tag, maybe.group())
+        if string.startswith(regex_string, pos):
+            return match_type(tag, regex_string)
     return parser
 
 
