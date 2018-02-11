@@ -147,6 +147,7 @@ def flatten_parsers(rule, stack, curr_combinator):
 
 def delay_and_raise(parser_table, identifier):
     def parser(string, pos):
+        print("identifier invoked")
         return LanguageNode(parser_table[identifier](string, pos))
     return parser
 

@@ -30,8 +30,8 @@ symbol = ( letter | math symbol ) , { character } ;
 sexp = "(" , [ whitespace ] , symbol , { whitespace , symbol }, [ whitespace ], ")" ;
 quote = "'" ;
 backquote = "`" ;
-quoted_list = ( quote , "(" , ")" ) | ( quote, sexp ) ;
-backquoted_list = ( backquote , "(" , ")" ) | ( backquote, sexp ) ;
+quoted list = ( quote , "(" , ")" ) | ( quote, sexp ) ;
+backquoted list = ( backquote , "(" , ")" ) | ( backquote, sexp ) ;
 ```
 
 Later on it might be necessary to define 'define' and 'syntax-rule' which would only require editing this spec. A scheme level reader macro seems unlikely, but it's definitely possible to extend syntax here as a substitute, provided the new definitions are handled in the AST generation code.

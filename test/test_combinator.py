@@ -1,6 +1,6 @@
 from poyais.combinator import (
     make_tagged_matcher, and_parsers, or_parsers, make_parser_from_rule,
-    make_parser_table
+    make_parser_table, many_parser
 )
 from hypothesis.strategies import text, lists, sampled_from
 from poyais.ebnf import LexedRule, Rule, lex_rule
@@ -55,6 +55,16 @@ def test_or_parsers_acts_as_either(reg1, reg2):
 
     tm2 = func(reg2, 0)
     assert reg2.startswith(tm2.match)
+
+
+# don't.. don't feed many_parser the empty parser.
+@given(text(alphabet=string.ascii_letters, min_size=1))
+def test_many_parser(word):
+    # why is there an infinite loop here when hypothesis tests but
+    # manual tests work?
+    p1 = make_tagged_matcher('word', word)
+    many = many_parser(p1)
+    assert many(word + word + word, 0) is not None
 
 
 WHITESPACE = (" ", "\t", "\n")
@@ -135,6 +145,21 @@ def test_simple_optional_rule():
     got = parser("optionally: here", 0)
     assert got is not None
     assert isinstance(got, LanguageNode)
+    assert str(got) == 'optionally: here'
+    got2 = parser("here", 0)
+    assert got2 is not None
+    assert isinstance(got2, LanguageNode)
+    assert str(got2) == 'here'
+
+
+def test_identifiers():
+    spec = """
+        simple = "w", "o", "r", "d";
+        complex = { simple };
+    """
+    parser_table = make_parser_table(spec)
+    assert str(parser_table['simple']('word', 0)) == 'word'
+    assert str(parser_table['complex']('wordword', 0)) == 'wordword'
 
 
 def test_make_parser_table():

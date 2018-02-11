@@ -54,7 +54,7 @@ class LanguageNode:
         if len(got) == 1:
             return len(got[0].match)
         else:
-            return operator.add(len(token.match) for token in got)
+            return operator.add(*(len(token.match) for token in got))
 
     def __repr__(self):
         return "LanguageNode({}{})".format(
