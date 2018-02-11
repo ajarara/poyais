@@ -49,12 +49,7 @@ class LanguageNode:
 
     def __len__(self):
         got = iter_traverse(self)
-        if len(got) == 0:
-            return 0
-        if len(got) == 1:
-            return len(got[0].match)
-        else:
-            return operator.add(*(len(token.match) for token in got))
+        return sum(len(token.match) for token in got)
 
     def __repr__(self):
         return "LanguageNode({}{})".format(
@@ -115,7 +110,6 @@ def what_is_linum_of_idx(program_string, absolute_idx):
     if not line_map:
         return Linum(1, absolute_idx)
     line_num = _search(line_map, absolute_idx)
-    print(line_num)
     if line_num == 0:
         chars_consumed = 0
     else:
