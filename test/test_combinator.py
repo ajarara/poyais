@@ -8,7 +8,7 @@ from poyais.utility import LanguageToken, LanguageNode
 from hypothesis import given
 import pytest
 import string
-# import pytest
+import pytest
 
 
 @given(text(alphabet=string.ascii_letters))
@@ -251,19 +251,32 @@ def test_many_identifiers():
     assert str(twice) == 'hihi'
 
 
-
-
 def test_make_parser_table():
     rules = "this = 't' | 'h' | 'i' | 's';"
     table = make_parser_table(rules)
     assert 'this' in table
     this_p = table['this']
-    
+
     assert this_p('t', 0)
     assert this_p('h', 0)
     assert this_p('i', 0)
     assert this_p('s', 0)
     assert this_p('w', 0) is None
+
+
+@pytest.mark.skip("unimplemented")
+def test_ast_properties():
+    spec = r"""
+        sexp = "(", { { whitespace }, symbol, { whitespace },
+                { symbol, whitespace } }, ")";
+
+        whitespace = " ", "\t", "\n";
+        symbol = "word" | "digit" | "operation";
+    """
+    table = make_parser_table(spec)
+    sexp_parser = table['sexp']
+    ast = sexp_parser("(word)", 0)
+    assert False
 
 
 def concat_tm_matches(tms):
