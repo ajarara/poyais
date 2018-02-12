@@ -13,8 +13,8 @@ whitespace = " " | "\t" | "\n" ;
 
 character = letter | digit | math symbol ;
 symbol = ( letter | math symbol ) , { character } ;
-sexp = "(" , [ whitespace ], symbol , { whitespace , symbol },
-     [ whitespace ], ")" ;
+sexp = "(" , { whitespace }, symbol , { whitespace , symbol },
+     { whitespace }, ")" ;
 
 quote = "'" ;
 backquote = "`" ;
