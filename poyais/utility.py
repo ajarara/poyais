@@ -31,6 +31,9 @@ def node_from_iterable(it):
 # but since this is a PoC, leave it for now.
 LanguageToken = namedtuple('LanguageToken', ('tag', 'match'))
 
+# mostly for empty matches
+UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
+
 
 class LanguageNode:
     def __init__(self, value, link=None):
@@ -53,11 +56,12 @@ class LanguageNode:
 
     def __repr__(self):
         return "LanguageNode({}{})".format(
+            # self.value is calling __str__ here
             self.value, ', ...' if self.link is not None else '')
 
 
 def len_of_token_or_node(language_obj):
-    if isinstance(language_obj, LanguageToken):
+    if isinstance(language_obj, (LanguageToken, UtilityToken)):
         return len(language_obj.match)
     elif isinstance(language_obj, LanguageNode):
         return len(language_obj)

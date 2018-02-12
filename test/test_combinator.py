@@ -179,7 +179,6 @@ def test_simple_optional_rule_success():
     assert got.match == "bicycle"
 
 
-# @pytest.mark.skipped("Problem with optional parser")
 def test_simple_optional_rule_failure():
     parser = make_parser_from_rule_string('["bicycle"]')
     got = parser("", 0)
@@ -188,7 +187,6 @@ def test_simple_optional_rule_failure():
     assert got.tag == 'empty'
 
 
-@pytest.mark.skip("waiting on simpler rule")
 def test_additional_optional_rule():
     parser = make_parser_from_rule_string('["optionally: "], "here"')
     got = parser("optionally: here", 0)
@@ -201,15 +199,58 @@ def test_additional_optional_rule():
     assert str(got2) == 'here'
 
 
-@pytest.mark.skip("ignoring for now")
-def test_identifiers():
+def test_simple_identifier():
     spec = """
         simple = "w", "o", "r", "d";
-        complex = { simple };
+        complex = simple;
     """
     parser_table = make_parser_table(spec)
     assert str(parser_table['simple']('word', 0)) == 'word'
-    assert str(parser_table['complex']('wordword', 0)) == 'wordword'
+    assert str(parser_table['complex']('wordextra', 0)) == 'word'
+
+
+def test_two_identifiers():
+    spec = """
+        simple = "h", "e", "l", "l", "o";
+        moderate = "e", "l", "m", "o";
+        complex = simple, ' ', moderate;
+    """
+    parser_table = make_parser_table(spec)
+    complex_parser = parser_table['complex']
+    greeting = complex_parser('hello elmo', 0)
+    assert str(greeting.value) == 'hello'
+    assert isinstance(greeting.link.value, LanguageToken)
+    assert greeting.link.value.match == ' '
+    elmo = greeting.link.link
+    assert isinstance(elmo, LanguageNode)
+    assert str(elmo) == 'elmo'
+
+
+def test_many_identifiers():
+    spec = """
+        short = "h", "i";
+        obnoxious = { short };
+    """
+    parser_table = make_parser_table(spec)
+    obnoxious = parser_table['obnoxious']
+    none = obnoxious('', 0)
+    assert isinstance(none, UtilityToken)
+    assert none.tag == 'empty'
+
+    once = obnoxious('hi', 0)
+    assert isinstance(once, LanguageNode)
+    assert isinstance(once.value, LanguageNode)
+    assert str(once) == 'hi'
+
+    twice = obnoxious('hihi', 0)
+    assert isinstance(twice, LanguageNode)
+    assert str(twice.value) == 'hi'
+    assert isinstance(twice.link, LanguageNode)
+    assert str(twice.link) == 'hi'
+
+    assert str(twice) == 'hihi'
+
+
 
 
 def test_make_parser_table():

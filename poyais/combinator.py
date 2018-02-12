@@ -1,9 +1,7 @@
 from poyais.utility import (
     LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx,
-    len_of_token_or_node,)
-from collections import namedtuple
+    len_of_token_or_node, UtilityToken)
 from poyais.ebnf import ebnf_lexer
-import re
 
 
 # the fundamental parser unit is constructed from a tag
@@ -11,7 +9,6 @@ import re
 
 # it is just a function that takes a string and returns
 # a generator that yields a number of tagged matches:
-UtilityToken = namedtuple('UtilityToken', ('tag', 'match'))
 
 # an alternative I like better is to do recursive calls on groups,
 # having them be aware of terminating identifiers like }, ], ) and
@@ -143,7 +140,9 @@ def flatten_parsers(rule, stack, curr_combinator):
 
 def delay_and_raise(parser_table, identifier):
     def parser(string, pos):
-        return LanguageNode(parser_table[identifier](string, pos))
+        print("identifier called")
+        return parser_table[identifier](string, pos)
+        # return LanguageNode(parser_table[identifier](string, pos))
     return parser
 
 
@@ -197,6 +196,7 @@ def make_parser_table(ebnf_string):
     return out
 
 
+# exclusive to parsing, so just leave it here instead of shoving into utility
 def errmsg(err_name, *args):
     return {
         'lord_have_mercy': lambda rule, idx: "\n".join((
