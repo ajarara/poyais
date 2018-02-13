@@ -7,14 +7,11 @@ Poyais is the beginnings of a Scheme implementing [r7rs](https://r7rs.org) targe
 Why not?
 
 # How?
-Aim is to take an EBNF specification to a compiler. What is currently included is a relatively clean EBNF tokenizer and primitives to combine parsers.
+Aim is to take an EBNF specification to a compiler. What is currently included is a relatively clean EBNF tokenizer, and a parser combinator.
 
-What remains to be written is:
- - A routine to transform a set of tokenized rules derived from EBNF into a parser
- - A routine that transforms the output of a parser into an AST
- - A routine that transforms an AST into JVM bytecode
- 
-Here's an incomplete EBNF spec for scheme following ISO/EIC 14977
+After finishing the combinator I've decided to put a hold on this project, perhaps permanently. I see a lot of personal value in type systems, and this implementation so far has most of the mental overhead of a type system with none of the benefits. I might step back and rewrite this, I'm not happy with it as is, and it'll take some time I think.
+
+Here's an incomplete spec for scheme following ISO/EIC 14977's definition of EBNF.
 ``` ebnf
 letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" 
        | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v"
