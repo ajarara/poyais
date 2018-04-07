@@ -1,5 +1,5 @@
 from poyais.utility import (
-    LanguageNode, LanguageToken, node_from_iterable, what_is_linum_of_idx,
+    LanguageToken, node_from_iterable, what_is_linum_of_idx,
     len_of_token_or_node, UtilityToken)
 from poyais.ebnf import ebnf_lexer
 
